@@ -84,35 +84,66 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private unsafe void DiscardNextItem(bool finishRetainerAction)
     {
+        PluginLog.Information($"DiscardNextItem (retainer = {finishRetainerAction})");
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard();
         if (nextItem == null)
         {
+            PluginLog.Information($"No item to discard found");
             if (finishRetainerAction)
                 _autoRetainerApi.FinishPostProcess();
             else
                 _chatGui.Print("Done discarding.");
-            return;
         }
+        else
+        {
+            var (inventoryType, slot) = (nextItem->Container, nextItem->Slot);
 
-        var (inventoryType, slot) = (nextItem->Container, nextItem->Slot);
+            PluginLog.Information(
+                $"Discarding itemId {nextItem->ItemID} in slot {nextItem->Slot} of container {nextItem->Container}.");
+            _inventoryUtils.Discard(nextItem);
 
-        //_chatGui.Print($"Discarding {nextItem->ItemID}, {nextItem->Container}, {nextItem->Slot}.");
-        _inventoryUtils.Discard(nextItem);
-
-
-        _taskManager.DelayNext(5);
-        _taskManager.Enqueue(ConfirmDiscardItem);
-        _taskManager.DelayNext(20);
-        _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
+            _taskManager.DelayNext(20);
+            _taskManager.Enqueue(() => ConfirmDiscardItem(finishRetainerAction, inventoryType, slot));
+        }
     }
 
-    private unsafe void ConfirmDiscardItem()
+    private unsafe void ConfirmDiscardItem(bool finishRetainerAction, InventoryType inventoryType, short slot)
     {
         var addon = GetDiscardAddon();
         if (addon != null)
         {
+            PluginLog.Information("Addon is visible, clicking 'yes'");
             ((AddonSelectYesno*)addon)->YesButton->AtkComponentBase.SetEnabledState(true);
             ClickSelectYesNo.Using((nint)addon).Yes();
+
+            _taskManager.DelayNext(20);
+            _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
+        }
+        else
+        {
+            InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard();
+            if (nextItem == null)
+            {
+                PluginLog.Information("Addon is not visible, but next item is also no longer set");
+                if (finishRetainerAction)
+                    _autoRetainerApi.FinishPostProcess();
+                else
+                    _chatGui.Print("Done discarding.");
+            }
+            else if (nextItem->Container == inventoryType && nextItem->Slot == slot)
+            {
+                PluginLog.Information(
+                    $"Addon is not (yet) visible, still trying to discard item in slot {slot} in inventory {inventoryType}");
+                _taskManager.DelayNext(100);
+                _taskManager.Enqueue(() => ConfirmDiscardItem(finishRetainerAction, inventoryType, slot));
+            }
+            else
+            {
+                PluginLog.Information(
+                    $"Addon is not (yet) visible, but slot or inventory type changed, retrying from start");
+                _taskManager.DelayNext(100);
+                _taskManager.Enqueue(() => DiscardNextItem(finishRetainerAction));
+            }
         }
     }
 
@@ -121,20 +152,21 @@ public class AutoDiscardPlogon : IDalamudPlugin
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard();
         if (nextItem == null)
         {
+            PluginLog.Information($"Continuing after discard: no next item (retainer = {finishRetainerAction})");
             if (finishRetainerAction)
                 _autoRetainerApi.FinishPostProcess();
             else
                 _chatGui.Print("Done discarding.");
-            return;
         }
-
-        if (nextItem->Container == inventoryType && nextItem->Slot == slot)
+        else if (nextItem->Container == inventoryType && nextItem->Slot == slot)
         {
+            PluginLog.Information($"ContinueAfterDiscard: Waiting for server response");
             _taskManager.DelayNext(20);
             _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
         }
         else
         {
+            PluginLog.Information($"ContinueAfterDiscard: Discovered different item to discard");
             _taskManager.EnqueueImmediate(() => DiscardNextItem(finishRetainerAction));
         }
     }
@@ -159,11 +191,11 @@ public class AutoDiscardPlogon : IDalamudPlugin
             {
                 var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SelectYesno", i);
                 if (addon == null) return null;
-                if (addon->IsVisible)
+                if (addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded)
                 {
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
                     var text = MemoryHelper.ReadSeString(&textNode->NodeText).ExtractText();
-                    PluginLog.Information($"TEt → {text}");
+                    PluginLog.Information($"YesNo prompt: {text}");
                     if (text.StartsWith("Discard"))
                     {
                         return addon;
