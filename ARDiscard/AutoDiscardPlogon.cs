@@ -47,7 +47,6 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
         _configWindow = new(_pluginInterface, _configuration, dataManager);
-        _configWindow.IsOpen = true;
         _windowSystem.AddWindow(_configWindow);
 
         ECommonsMain.Init(_pluginInterface, this);
@@ -103,7 +102,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
         _taskManager.DelayNext(5);
         _taskManager.Enqueue(ConfirmDiscardItem);
-        _taskManager.DelayNext(2000);
+        _taskManager.DelayNext(20);
         _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
     }
 
@@ -131,7 +130,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
         if (nextItem->Container == inventoryType && nextItem->Slot == slot)
         {
-            _taskManager.DelayNext(100);
+            _taskManager.DelayNext(20);
             _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
         }
         else
