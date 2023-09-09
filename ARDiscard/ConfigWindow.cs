@@ -53,7 +53,7 @@ public class ConfigWindow : Window
 
             ImGui.Separator();
 
-            if (_searchResults.Count == 0)
+            if (string.IsNullOrEmpty(_itemName))
             {
                 ImGui.Text("Type item name...");
             }
