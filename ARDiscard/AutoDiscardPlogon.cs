@@ -61,7 +61,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private unsafe void CheckPostProcess(string retainerName)
     {
-        if (_inventoryUtils.GetNextItemToDiscard() != null)
+        if (_configuration.RunAfterVenture && _inventoryUtils.GetNextItemToDiscard() != null)
             _autoRetainerApi.RequestPostprocess();
     }
 

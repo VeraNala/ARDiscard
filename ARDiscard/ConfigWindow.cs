@@ -43,6 +43,13 @@ public class ConfigWindow : Window
 
     public override void Draw()
     {
+        bool runAfterVenture = _configuration.RunAfterVenture;
+        if (ImGui.Checkbox("Run automatically after AutoRetainer's venture", ref runAfterVenture))
+        {
+            _configuration.RunAfterVenture = runAfterVenture;
+            _pluginInterface.SavePluginConfig(_configuration);
+        }
+
         var ws = ImGui.GetWindowSize();
         if (ImGui.BeginChild("Left", new Vector2(Math.Max(10, ws.X / 2), -1), true))
         {

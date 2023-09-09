@@ -6,5 +6,6 @@ namespace ARDiscard;
 public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 1;
-    public List<uint> DiscardingItems = new();
+    public bool RunAfterVenture { get; set; }
+    public List<uint> DiscardingItems { get; set; }= new();
 }
