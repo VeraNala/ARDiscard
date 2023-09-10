@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using AutoRetainerAPI;
 using ClickLib.Clicks;
 using Dalamud.Data;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
@@ -25,17 +27,19 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly ChatGui _chatGui;
+    private readonly ClientState _clientState;
     private readonly CommandManager _commandManager;
     private readonly InventoryUtils _inventoryUtils;
     private readonly AutoRetainerApi _autoRetainerApi;
     private readonly TaskManager _taskManager;
 
     public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, CommandManager commandManager, ChatGui chatGui,
-        DataManager dataManager)
+        DataManager dataManager, ClientState clientState)
     {
         _pluginInterface = pluginInterface;
         _configuration = (Configuration?)_pluginInterface.GetPluginConfig() ?? new Configuration();
         _chatGui = chatGui;
+        _clientState = clientState;
         _commandManager = commandManager;
         _commandManager.AddHandler("/discardconfig", new CommandInfo(OpenConfig));
         _commandManager.AddHandler("/discardall", new CommandInfo(ProcessCommand));
@@ -43,7 +47,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
-        _configWindow = new(_pluginInterface, _configuration, dataManager);
+        _configWindow = new(_pluginInterface, _configuration, dataManager, clientState);
         _windowSystem.AddWindow(_configWindow);
 
         ECommonsMain.Init(_pluginInterface, this);
@@ -58,8 +62,23 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private unsafe void CheckPostProcess(string retainerName)
     {
-        if (_configuration.RunAfterVenture && _inventoryUtils.GetNextItemToDiscard() != null)
+        if (!_configuration.RunAfterVenture)
+        {
+            PluginLog.Information($"Not running post-venture tasks for {retainerName}, disabled globally");
+        }
+        else if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _clientState.LocalContentId))
+        {
+            PluginLog.Information($"Not running post-venture tasks for {retainerName}, disabled for current character");
+        }
+        else if (_inventoryUtils.GetNextItemToDiscard() == null)
+        {
+            PluginLog.Information($"Not running post-venture tasks for {retainerName}, no items to discard");
+        }
+        else
+        {
+            PluginLog.Information($"Requesting post-processing for {retainerName}");
             _autoRetainerApi.RequestPostprocess();
+        }
     }
 
     private void DoPostProcess(string retainerName)

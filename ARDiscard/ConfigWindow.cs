@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Data;
+using Dalamud.Game.ClientState;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ECommons;
@@ -16,6 +18,7 @@ public class ConfigWindow : Window
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
     private readonly DataManager _dataManager;
+    private readonly ClientState _clientState;
     private string _itemName = string.Empty;
 
     private List<(uint ItemId, string Name)> _searchResults = new();
@@ -23,12 +26,14 @@ public class ConfigWindow : Window
     private List<(uint ItemId, string Name)>? _allItems = null;
     private bool _resetKeyboardFocus = true;
 
-    public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, DataManager dataManager)
+    public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, DataManager dataManager,
+        ClientState clientState)
         : base("Auto Discard###AutoDiscardConfig")
     {
         _pluginInterface = pluginInterface;
         _configuration = configuration;
         _dataManager = dataManager;
+        _clientState = clientState;
 
         Size = new Vector2(600, 400);
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -46,97 +51,189 @@ public class ConfigWindow : Window
     public override void Draw()
     {
         bool runAfterVenture = _configuration.RunAfterVenture;
-        if (ImGui.Checkbox("Run automatically after AutoRetainer's venture", ref runAfterVenture))
+        if (ImGui.Checkbox("[Global] Run automatically after AutoRetainer's venture", ref runAfterVenture))
         {
             _configuration.RunAfterVenture = runAfterVenture;
-            _pluginInterface.SavePluginConfig(_configuration);
+            Save();
         }
 
-        var ws = ImGui.GetWindowSize();
-        if (ImGui.BeginChild("Left", new Vector2(Math.Max(10, ws.X / 2), -1), true))
+        if (ImGui.BeginTabBar("AutoDiscardTabs"))
         {
-            ImGui.Text("Search");
-            ImGui.SetNextItemWidth(ws.X / 2 - 20);
-            if (_resetKeyboardFocus)
+            DrawDiscardList();
+            DrawExcludedCharacters();
+
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void DrawDiscardList()
+    {
+        if (ImGui.BeginTabItem("Items to Discard"))
+        {
+            var ws = ImGui.GetWindowSize();
+            if (ImGui.BeginChild("Left", new Vector2(Math.Max(10, ws.X / 2), -1), true))
             {
-                ImGui.SetKeyboardFocusHere();
-                _resetKeyboardFocus = false;
+                ImGui.Text("Search");
+                ImGui.SetNextItemWidth(ws.X / 2 - 20);
+                if (_resetKeyboardFocus)
+                {
+                    ImGui.SetKeyboardFocusHere();
+                    _resetKeyboardFocus = false;
+                }
+
+                string previousName = _itemName;
+                if (ImGui.InputText("", ref _itemName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+                {
+                    _resetKeyboardFocus = true;
+                    if (_searchResults.Count > 0)
+                    {
+                        var itemToAdd = _searchResults.FirstOrDefault();
+                        if (_discarding.All(x => x.ItemId != itemToAdd.ItemId))
+                        {
+                            _discarding.Add(itemToAdd);
+                        }
+                        else
+                        {
+                            _discarding.Remove(itemToAdd);
+                        }
+
+                        Save();
+                    }
+                }
+
+                if (previousName != _itemName)
+                    UpdateResults();
+
+                ImGui.Separator();
+
+                if (string.IsNullOrEmpty(_itemName))
+                {
+                    ImGui.Text("Type item name...");
+                }
+
+                foreach (var (id, name) in _searchResults)
+                {
+                    bool selected = _discarding.Any(x => x.Item1 == id);
+                    if (ImGui.Selectable(name, selected))
+                    {
+                        if (!selected)
+                        {
+                            _discarding.Add((id, name));
+                        }
+                        else
+                        {
+                            _discarding.Remove((id, name));
+                        }
+
+                        Save();
+                    }
+                }
             }
 
-            string previousName = _itemName;
-            if (ImGui.InputText("", ref _itemName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
+            ImGui.EndChild();
+            ImGui.SameLine();
+
+            if (ImGui.BeginChild("Right", new Vector2(-1, -1), true, ImGuiWindowFlags.NoSavedSettings))
             {
-                _resetKeyboardFocus = true;
-                if (_searchResults.Count > 0)
+                ImGui.Text("Items that will be automatically discarded");
+                ImGui.Separator();
+
+                List<(uint, string)> toRemove = new();
+                foreach (var (id, name) in _discarding.OrderBy(x => x.Name.ToLower()))
                 {
-                    var itemToAdd = _searchResults.FirstOrDefault();
-                    if (_discarding.All(x => x.ItemId != itemToAdd.ItemId))
-                    {
-                        _discarding.Add(itemToAdd);
-                    }
-                    else
-                    {
-                        _discarding.Remove(itemToAdd);
-                    }
+                    if (ImGui.Selectable(name, true))
+                        toRemove.Add((id, name));
+                }
+
+                if (toRemove.Count > 0)
+                {
+                    foreach (var tr in toRemove)
+                        _discarding.Remove(tr);
 
                     Save();
                 }
             }
 
-            if (previousName != _itemName)
-                UpdateResults();
+            ImGui.EndChild();
+            ImGui.EndTabItem();
+        }
+    }
 
-            ImGui.Separator();
-
-            if (string.IsNullOrEmpty(_itemName))
+    private void DrawExcludedCharacters()
+    {
+        if (ImGui.BeginTabItem("Excluded Characters"))
+        {
+            if (_clientState.IsLoggedIn && _clientState.LocalContentId > 0)
             {
-                ImGui.Text("Type item name...");
-            }
-
-            foreach (var (id, name) in _searchResults)
-            {
-                bool selected = _discarding.Any(x => x.Item1 == id);
-                if (ImGui.Selectable(name, selected))
+                string worldName = _clientState.LocalPlayer?.HomeWorld.GameData?.Name ?? "??";
+                ImGui.TextWrapped(
+                    $"Current Character: {_clientState.LocalPlayer?.Name} @ {worldName} ({_clientState.LocalContentId:X})");
+                ImGui.Indent(30);
+                if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _clientState.LocalContentId))
                 {
-                    if (!selected)
+                    ImGui.TextColored(ImGuiColors.DalamudRed, "This character is currently excluded.");
+                    if (ImGui.Button("Remove exclusion"))
                     {
-                        _discarding.Add((id, name));
+                        _configuration.ExcludedCharacters.RemoveAll(
+                            c => c.LocalContentId == _clientState.LocalContentId);
+                        Save();
+                    }
+                }
+                else
+                {
+                    if (_configuration.RunAfterVenture)
+                    {
+                        ImGui.TextColored(ImGuiColors.HealerGreen,
+                            "This character is currently included (and will be post-processed in autoretainer).");
                     }
                     else
                     {
-                        _discarding.Remove((id, name));
+                        ImGui.TextColored(ImGuiColors.DalamudYellow,
+                            "This character is currently included (but running post-processing is disabled globally)");
                     }
 
-                    Save();
+                    if (ImGui.Button("Exclude current character"))
+                    {
+                        _configuration.ExcludedCharacters.Add(new Configuration.CharacterInfo
+                        {
+                            LocalContentId = _clientState.LocalContentId,
+                            CachedPlayerName = _clientState.LocalPlayer?.Name.ToString() ?? "??",
+                            CachedWorldName = worldName,
+                        });
+                        Save();
+                    }
+                }
+
+                ImGui.Unindent(30);
+            }
+            else
+            {
+                ImGui.TextColored(ImGuiColors.DalamudRed, "You are not logged in.");
+            }
+
+            ImGui.Separator();
+            ImGui.TextWrapped(
+                "Characters that won't run auto-cleanup after ventures (/discardall works for excluded characters)");
+            ImGui.Spacing();
+
+            ImGui.Indent(30);
+            if (_configuration.ExcludedCharacters.Count == 0)
+            {
+                ImGui.TextColored(ImGuiColors.DalamudGrey, "No excluded characters.");
+            }
+            else
+            {
+                foreach (var characterInfo in _configuration.ExcludedCharacters)
+                {
+                    ImGui.Text(
+                        $"{characterInfo.CachedPlayerName} @ {characterInfo.CachedWorldName} ({characterInfo.LocalContentId:X})");
                 }
             }
+
+            ImGui.Unindent(30);
+
+            ImGui.EndTabItem();
         }
-
-        ImGui.EndChild();
-        ImGui.SameLine();
-
-        if (ImGui.BeginChild("Right", new Vector2(-1, -1), true, ImGuiWindowFlags.NoSavedSettings))
-        {
-            ImGui.Text("Items that will be automatically discarded");
-            ImGui.Separator();
-
-            List<(uint, string)> toRemove = new();
-            foreach (var (id, name) in _discarding.OrderBy(x => x.Name.ToLower()))
-            {
-                if (ImGui.Selectable(name, true))
-                    toRemove.Add((id, name));
-            }
-
-            if (toRemove.Count > 0)
-            {
-                foreach (var tr in toRemove)
-                    _discarding.Remove(tr);
-
-                Save();
-            }
-        }
-
-        ImGui.EndChild();
     }
 
     private void UpdateResults()

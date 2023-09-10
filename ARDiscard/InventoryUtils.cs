@@ -36,15 +36,23 @@ public class InventoryUtils : IDisposable
         foreach (InventoryType inventoryType in InventoryTypes)
         {
             InventoryContainer* container = inventoryManager->GetInventoryContainer(inventoryType);
+            //PluginLog.Verbose($"Checking {inventoryType}, {container->Size}");
             for (int i = 0; i < container->Size; ++i)
             {
                 var item = container->GetInventorySlot(i);
                 if (item != null)
                 {
+                    //PluginLog.Verbose($"{i} → {item->ItemID}");
                     if (_configuration.DiscardingItems.Contains(item->ItemID))
                     {
+                        PluginLog.Information(
+                            $"Found item {item->ItemID} to discard in inventory {inventoryType} in slot {i}");
                         return item;
                     }
+                }
+                else
+                {
+                    //PluginLog.Verbose($"{i} → none");
                 }
             }
         }
