@@ -33,6 +33,8 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private readonly AutoRetainerApi _autoRetainerApi;
     private readonly TaskManager _taskManager;
 
+    private DateTime _cancelDiscardAfter = DateTime.MaxValue;
+
     public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, CommandManager commandManager, ChatGui chatGui,
         DataManager dataManager, ClientState clientState)
     {
@@ -117,6 +119,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
             PluginLog.Information(
                 $"Discarding itemId {nextItem->ItemID} in slot {nextItem->Slot} of container {nextItem->Container}.");
             _inventoryUtils.Discard(nextItem);
+            _cancelDiscardAfter = DateTime.Now.AddSeconds(15);
 
             _taskManager.DelayNext(20);
             _taskManager.Enqueue(() => ConfirmDiscardItem(finishRetainerAction, inventoryType, slot));
@@ -176,9 +179,20 @@ public class AutoDiscardPlogon : IDalamudPlugin
         }
         else if (nextItem->Container == inventoryType && nextItem->Slot == slot)
         {
-            PluginLog.Information($"ContinueAfterDiscard: Waiting for server response");
-            _taskManager.DelayNext(20);
-            _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
+            if (_cancelDiscardAfter < DateTime.Now)
+            {
+                PluginLog.Information("No longer waiting for plugin to pop up, assume discard failed");
+                if (finishRetainerAction)
+                    _autoRetainerApi.FinishPostProcess();
+                else
+                    _chatGui.PrintError("Discarding probably failed due to an error.");
+            }
+            else
+            {
+                PluginLog.Information($"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
+                _taskManager.DelayNext(20);
+                _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
+            }
         }
         else
         {
