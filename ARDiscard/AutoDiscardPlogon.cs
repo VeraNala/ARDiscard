@@ -65,14 +65,14 @@ public class AutoDiscardPlogon : IDalamudPlugin
     public string Name => "Discard after AutoRetainer";
 
     private void CheckRetainerPostProcess(string retainerName) =>
-        CheckPostProcessInternal(PostProcessType.Retainer, retainerName);
+        CheckPostProcessInternal(PostProcessType.Retainer, retainerName, _configuration.RunAfterVenture);
 
     private void CheckCharacterPostProcess() =>
-        CheckPostProcessInternal(PostProcessType.Character, "current character");
+        CheckPostProcessInternal(PostProcessType.Character, "current character", _configuration.RunBeforeLogout);
 
-    private unsafe void CheckPostProcessInternal(PostProcessType type, string name)
+    private unsafe void CheckPostProcessInternal(PostProcessType type, string name, bool enabled)
     {
-        if (!_configuration.RunAfterVenture)
+        if (!enabled)
         {
             PluginLog.Information($"Not running post-venture tasks for {name}, disabled globally");
         }

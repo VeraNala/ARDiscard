@@ -7,6 +7,7 @@ public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 1;
     public bool RunAfterVenture { get; set; }
+    public bool RunBeforeLogout { get; set; }
     public List<uint> DiscardingItems { get; set; } = new();
     public List<CharacterInfo> ExcludedCharacters { get; set; } = new();
 
