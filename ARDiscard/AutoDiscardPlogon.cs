@@ -56,36 +56,52 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _autoRetainerApi = new();
         _taskManager = new();
 
-        _autoRetainerApi.OnRetainerReadyToPostprocess += DoPostProcess;
-        _autoRetainerApi.OnRetainerPostprocessStep += CheckPostProcess;
+        _autoRetainerApi.OnRetainerPostprocessStep += CheckRetainerPostProcess;
+        _autoRetainerApi.OnRetainerReadyToPostprocess += DoRetainerPostProcess;
+        _autoRetainerApi.OnCharacterPostprocessStep += CheckCharacterPostProcess;
+        _autoRetainerApi.OnCharacterReadyToPostProcess += DoCharacterPostProcess;
     }
 
     public string Name => "Discard after AutoRetainer";
 
-    private unsafe void CheckPostProcess(string retainerName)
+    private void CheckRetainerPostProcess(string retainerName) =>
+        CheckPostProcessInternal(PostProcessType.Retainer, retainerName, _configuration.RunAfterVenture);
+
+    private void CheckCharacterPostProcess() =>
+        CheckPostProcessInternal(PostProcessType.Character, "current character", _configuration.RunBeforeLogout);
+
+    private unsafe void CheckPostProcessInternal(PostProcessType type, string name, bool enabled)
     {
-        if (!_configuration.RunAfterVenture)
+        if (!enabled)
         {
-            PluginLog.Information($"Not running post-venture tasks for {retainerName}, disabled globally");
+            PluginLog.Information($"Not running post-venture tasks for {name}, disabled globally");
         }
         else if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _clientState.LocalContentId))
         {
-            PluginLog.Information($"Not running post-venture tasks for {retainerName}, disabled for current character");
+            PluginLog.Information($"Not running post-venture tasks for {name}, disabled for current character");
         }
         else if (_inventoryUtils.GetNextItemToDiscard() == null)
         {
-            PluginLog.Information($"Not running post-venture tasks for {retainerName}, no items to discard");
+            PluginLog.Information($"Not running post-venture tasks for {name}, no items to discard");
         }
         else
         {
-            PluginLog.Information($"Requesting post-processing for {retainerName}");
-            _autoRetainerApi.RequestPostprocess();
+            PluginLog.Information($"Requesting post-processing for {name}");
+            if (type == PostProcessType.Retainer)
+                _autoRetainerApi.RequestRetainerPostprocess();
+            else if (type == PostProcessType.Character)
+                _autoRetainerApi.RequestCharacterPostprocess();
         }
     }
 
-    private void DoPostProcess(string retainerName)
+    private void DoRetainerPostProcess(string retainerName)
     {
-        _taskManager.Enqueue(() => DiscardNextItem(true));
+        _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.Retainer));
+    }
+
+    private void DoCharacterPostProcess()
+    {
+        _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.Character));
     }
 
     private void OpenConfig(string command, string arguments) => OpenConfigUi();
@@ -97,18 +113,20 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private void ProcessCommand(string command, string arguments)
     {
-        _taskManager.Enqueue(() => DiscardNextItem(false));
+        _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.FromCommand));
     }
 
-    private unsafe void DiscardNextItem(bool finishRetainerAction)
+    private unsafe void DiscardNextItem(PostProcessType type)
     {
-        PluginLog.Information($"DiscardNextItem (retainer = {finishRetainerAction})");
+        PluginLog.Information($"DiscardNextItem (type = {type})");
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard();
         if (nextItem == null)
         {
             PluginLog.Information($"No item to discard found");
-            if (finishRetainerAction)
-                _autoRetainerApi.FinishPostProcess();
+            if (type == PostProcessType.Retainer)
+                _autoRetainerApi.FinishRetainerPostProcess();
+            else if (type == PostProcessType.Character)
+                _autoRetainerApi.FinishCharacterPostProcess();
             else
                 _chatGui.Print("Done discarding.");
         }
@@ -122,11 +140,11 @@ public class AutoDiscardPlogon : IDalamudPlugin
             _cancelDiscardAfter = DateTime.Now.AddSeconds(15);
 
             _taskManager.DelayNext(20);
-            _taskManager.Enqueue(() => ConfirmDiscardItem(finishRetainerAction, inventoryType, slot));
+            _taskManager.Enqueue(() => ConfirmDiscardItem(type, inventoryType, slot));
         }
     }
 
-    private unsafe void ConfirmDiscardItem(bool finishRetainerAction, InventoryType inventoryType, short slot)
+    private unsafe void ConfirmDiscardItem(PostProcessType type, InventoryType inventoryType, short slot)
     {
         var addon = GetDiscardAddon();
         if (addon != null)
@@ -136,7 +154,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
             ClickSelectYesNo.Using((nint)addon).Yes();
 
             _taskManager.DelayNext(20);
-            _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
+            _taskManager.Enqueue(() => ContinueAfterDiscard(type, inventoryType, slot));
         }
         else
         {
@@ -144,8 +162,10 @@ public class AutoDiscardPlogon : IDalamudPlugin
             if (nextItem == null)
             {
                 PluginLog.Information("Addon is not visible, but next item is also no longer set");
-                if (finishRetainerAction)
-                    _autoRetainerApi.FinishPostProcess();
+                if (type == PostProcessType.Retainer)
+                    _autoRetainerApi.FinishRetainerPostProcess();
+                else if (type == PostProcessType.Character)
+                    _autoRetainerApi.FinishCharacterPostProcess();
                 else
                     _chatGui.Print("Done discarding.");
             }
@@ -154,26 +174,28 @@ public class AutoDiscardPlogon : IDalamudPlugin
                 PluginLog.Information(
                     $"Addon is not (yet) visible, still trying to discard item in slot {slot} in inventory {inventoryType}");
                 _taskManager.DelayNext(100);
-                _taskManager.Enqueue(() => ConfirmDiscardItem(finishRetainerAction, inventoryType, slot));
+                _taskManager.Enqueue(() => ConfirmDiscardItem(type, inventoryType, slot));
             }
             else
             {
                 PluginLog.Information(
                     $"Addon is not (yet) visible, but slot or inventory type changed, retrying from start");
                 _taskManager.DelayNext(100);
-                _taskManager.Enqueue(() => DiscardNextItem(finishRetainerAction));
+                _taskManager.Enqueue(() => DiscardNextItem(type));
             }
         }
     }
 
-    private unsafe void ContinueAfterDiscard(bool finishRetainerAction, InventoryType inventoryType, short slot)
+    private unsafe void ContinueAfterDiscard(PostProcessType type, InventoryType inventoryType, short slot)
     {
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard();
         if (nextItem == null)
         {
-            PluginLog.Information($"Continuing after discard: no next item (retainer = {finishRetainerAction})");
-            if (finishRetainerAction)
-                _autoRetainerApi.FinishPostProcess();
+            PluginLog.Information($"Continuing after discard: no next item (type = {type})");
+            if (type == PostProcessType.Retainer)
+                _autoRetainerApi.FinishRetainerPostProcess();
+            else if (type == PostProcessType.Character)
+                _autoRetainerApi.FinishCharacterPostProcess();
             else
                 _chatGui.Print("Done discarding.");
         }
@@ -182,8 +204,10 @@ public class AutoDiscardPlogon : IDalamudPlugin
             if (_cancelDiscardAfter < DateTime.Now)
             {
                 PluginLog.Information("No longer waiting for plugin to pop up, assume discard failed");
-                if (finishRetainerAction)
-                    _autoRetainerApi.FinishPostProcess();
+                if (type == PostProcessType.Retainer)
+                    _autoRetainerApi.FinishRetainerPostProcess();
+                else if (type == PostProcessType.Character)
+                    _autoRetainerApi.FinishCharacterPostProcess();
                 else
                     _chatGui.PrintError("Discarding probably failed due to an error.");
             }
@@ -191,18 +215,23 @@ public class AutoDiscardPlogon : IDalamudPlugin
             {
                 PluginLog.Information($"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
                 _taskManager.DelayNext(20);
-                _taskManager.Enqueue(() => ContinueAfterDiscard(finishRetainerAction, inventoryType, slot));
+                _taskManager.Enqueue(() => ContinueAfterDiscard(type, inventoryType, slot));
             }
         }
         else
         {
             PluginLog.Information($"ContinueAfterDiscard: Discovered different item to discard");
-            _taskManager.EnqueueImmediate(() => DiscardNextItem(finishRetainerAction));
+            _taskManager.EnqueueImmediate(() => DiscardNextItem(type));
         }
     }
 
     public void Dispose()
     {
+        _autoRetainerApi.OnRetainerPostprocessStep -= CheckRetainerPostProcess;
+        _autoRetainerApi.OnRetainerReadyToPostprocess -= DoRetainerPostProcess;
+        _autoRetainerApi.OnCharacterPostprocessStep -= CheckCharacterPostProcess;
+        _autoRetainerApi.OnCharacterReadyToPostProcess -= DoCharacterPostProcess;
+
         _autoRetainerApi.Dispose();
         ECommonsMain.Dispose();
 
@@ -239,5 +268,12 @@ public class AutoDiscardPlogon : IDalamudPlugin
         }
 
         return null;
+    }
+
+    public enum PostProcessType
+    {
+        Retainer,
+        Character,
+        FromCommand,
     }
 }

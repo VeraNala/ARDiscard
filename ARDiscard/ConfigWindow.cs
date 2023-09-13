@@ -57,6 +57,13 @@ public class ConfigWindow : Window
             Save();
         }
 
+        bool runBeforeLogout = _configuration.RunBeforeLogout;
+        if (ImGui.Checkbox("[Global] Run before logging out in Multi-Mode", ref runBeforeLogout))
+        {
+            _configuration.RunBeforeLogout = runBeforeLogout;
+            Save();
+        }
+
         if (ImGui.BeginTabBar("AutoDiscardTabs"))
         {
             DrawDiscardList();
@@ -181,7 +188,7 @@ public class ConfigWindow : Window
                 }
                 else
                 {
-                    if (_configuration.RunAfterVenture)
+                    if (_configuration.RunAfterVenture || _configuration.RunBeforeLogout)
                     {
                         ImGui.TextColored(ImGuiColors.HealerGreen,
                             "This character is currently included (and will be post-processed in autoretainer).");
