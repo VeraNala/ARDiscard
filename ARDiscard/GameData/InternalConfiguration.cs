@@ -2,7 +2,7 @@
 
 namespace ARDiscard.GameData;
 
-public static class InternalConfiguration
+internal static class InternalConfiguration
 {
     public static IReadOnlyList<uint> BlacklistedItems = new List<uint>
     {

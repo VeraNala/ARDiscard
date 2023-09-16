@@ -3,7 +3,7 @@ using Dalamud.Configuration;
 
 namespace ARDiscard;
 
-public sealed class Configuration : IPluginConfiguration
+internal sealed class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 1;
     public bool RunAfterVenture { get; set; }

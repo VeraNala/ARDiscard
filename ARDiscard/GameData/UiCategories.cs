@@ -1,6 +1,6 @@
 namespace ARDiscard.GameData;
 
-public static class UiCategories
+internal static class UiCategories
 {
     public const uint Unobtainable = 39;
     public const uint Crystals = 59;

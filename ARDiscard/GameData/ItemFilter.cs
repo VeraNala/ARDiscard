@@ -2,7 +2,7 @@
 
 namespace ARDiscard.GameData;
 
-public class ItemFilter
+internal class ItemFilter
 {
     public static ItemFilter? None = null;
 

@@ -10,7 +10,7 @@ using Dalamud.Logging;
 
 namespace ARDiscard;
 
-public sealed class ContextMenuIntegration : IDisposable
+internal sealed class ContextMenuIntegration : IDisposable
 {
     private readonly Configuration _configuration;
     private readonly ConfigWindow _configWindow;

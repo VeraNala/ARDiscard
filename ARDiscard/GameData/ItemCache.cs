@@ -4,7 +4,7 @@ using Lumina.Excel.GeneratedSheets;
 
 namespace ARDiscard.GameData;
 
-public sealed class ItemCache
+internal sealed class ItemCache
 {
     private readonly Dictionary<uint, CachedItemInfo> _items = new();
 

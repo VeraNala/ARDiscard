@@ -9,7 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 
 namespace ARDiscard.GameData;
 
-public sealed class InventoryUtils
+internal sealed class InventoryUtils
 {
     private static readonly InventoryType[] DefaultInventoryTypes =
     {

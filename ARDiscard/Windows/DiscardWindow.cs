@@ -11,7 +11,7 @@ using ImGuiNET;
 
 namespace ARDiscard.Windows;
 
-public sealed class DiscardWindow : Window
+internal sealed class DiscardWindow : Window
 {
     private readonly InventoryUtils _inventoryUtils;
     private readonly ItemCache _itemCache;

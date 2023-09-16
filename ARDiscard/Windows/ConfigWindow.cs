@@ -15,7 +15,7 @@ using Condition = Dalamud.Game.ClientState.Conditions.Condition;
 
 namespace ARDiscard.Windows;
 
-public sealed class ConfigWindow : Window
+internal sealed class ConfigWindow : Window
 {
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
