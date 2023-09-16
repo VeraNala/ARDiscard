@@ -80,7 +80,7 @@ public sealed class DiscardWindow : Window
         ImGui.SameLine(ImGui.GetWindowWidth() - 160 * ImGuiHelpers.GlobalScale);
         ImGui.BeginDisabled(Locked ||
                             !_clientState.IsLoggedIn ||
-                            !_condition[ConditionFlag.NormalConditions] ||
+                            !(_condition[ConditionFlag.NormalConditions] || _condition[ConditionFlag.Mounted]) ||
                             _displayedItems.Count(x => x.Selected) == 0 ||
                             DiscardAllClicked == null);
         if (ImGui.Button("Discard all selected items"))

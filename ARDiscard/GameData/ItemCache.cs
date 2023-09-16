@@ -23,6 +23,7 @@ public sealed class ItemCache
                 Rarity = item.Rarity,
                 IsUnique = item.IsUnique,
                 IsUntradable = item.IsUntradable,
+                IsIndisposable = item.IsIndisposable,
                 Level = item.LevelEquip,
                 UiCategory = item.ItemUICategory.Row,
             };
@@ -31,7 +32,12 @@ public sealed class ItemCache
 
     public IEnumerable<CachedItemInfo> AllItems => _items.Values;
 
-    public CachedItemInfo? GetItem(uint itemId) => _items[itemId];
+    public CachedItemInfo? GetItem(uint itemId)
+    {
+        if (_items.TryGetValue(itemId, out var item))
+            return item;
+        return null;
+    }
 
     public string GetItemName(uint itemId)
     {
@@ -49,6 +55,12 @@ public sealed class ItemCache
         public required byte Rarity { get; init; }
         public required bool IsUnique { get; init; }
         public required bool IsUntradable { get; init; }
+
+        /// <summary>
+        /// Whether this item can be discarded at all. "Discard" is greyed out e.g. for the preorder EXP earrings.
+        /// </summary>
+        public required bool IsIndisposable { get; init; }
+
         public required uint UiCategory { get; init; }
     }
 }

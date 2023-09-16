@@ -65,7 +65,8 @@ public sealed class ConfigWindow : Window
         }
 
         ImGui.SameLine(ImGui.GetWindowWidth() - 115 * ImGuiHelpers.GlobalScale);
-        ImGui.BeginDisabled(!_clientState.IsLoggedIn || !_condition[ConditionFlag.NormalConditions] ||
+        ImGui.BeginDisabled(!_clientState.IsLoggedIn ||
+                            !(_condition[ConditionFlag.NormalConditions] || _condition[ConditionFlag.Mounted]) ||
                             DiscardNowClicked == null);
         if (ImGui.Button("Preview Discards"))
             DiscardNowClicked!.Invoke(this, EventArgs.Empty);
@@ -343,7 +344,7 @@ public sealed class ConfigWindow : Window
         if (_allItems == null)
         {
             _allItems = _itemCache.AllItems
-                .Where(x => !x.IsUnique && !x.IsUntradable)
+                .Where(x => x is { IsUnique: false, IsUntradable: false, IsIndisposable: false })
                 .Where(x => x.UiCategory != UiCategories.Currency && x.UiCategory != UiCategories.Crystals &&
                             x.UiCategory != UiCategories.Unobtainable)
                 .Select(x => (x.ItemId, x.Name.ToString()))
