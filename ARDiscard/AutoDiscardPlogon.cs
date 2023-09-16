@@ -38,6 +38,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private readonly InventoryUtils _inventoryUtils;
     private readonly AutoRetainerApi _autoRetainerApi;
     private readonly TaskManager _taskManager;
+    private readonly ContextMenuIntegration _contextMenuIntegration;
 
     private DateTime _cancelDiscardAfter = DateTime.MaxValue;
 
@@ -83,6 +84,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         ECommonsMain.Init(_pluginInterface, this);
         _autoRetainerApi = new();
         _taskManager = new();
+        _contextMenuIntegration = new(_configuration, _configWindow);
 
         _clientState.Login += _discardWindow.Login;
         _clientState.Logout += _discardWindow.Logout;
@@ -271,6 +273,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _clientState.Login -= _discardWindow.Login;
         _clientState.Logout -= _discardWindow.Logout;
 
+        _contextMenuIntegration.Dispose();
         _autoRetainerApi.Dispose();
         ECommonsMain.Dispose();
 

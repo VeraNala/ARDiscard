@@ -12,6 +12,7 @@ public sealed class Configuration : IPluginConfiguration
     public List<CharacterInfo> ExcludedCharacters { get; set; } = new();
 
     public ArmouryConfiguration Armoury { get; set; } = new();
+    public ContextMenuConfiguration ContextMenu { get; set; } = new();
 
     public sealed class CharacterInfo
     {
@@ -26,5 +27,11 @@ public sealed class Configuration : IPluginConfiguration
         public bool CheckLeftSideGear { get; set; } = false;
         public bool CheckRightSideGear { get; set; } = false;
         public int MaximumGearItemLevel { get; set; } = 45;
+    }
+
+    public sealed class ContextMenuConfiguration
+    {
+        public bool Enabled { get; set; } = false;
+        public bool OnlyWhenConfigIsOpen { get; set; } = true;
     }
 }

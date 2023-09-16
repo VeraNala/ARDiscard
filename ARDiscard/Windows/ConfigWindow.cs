@@ -297,6 +297,29 @@ public sealed class ConfigWindow : Window
 
             ImGui.Unindent(30);
             ImGui.EndDisabled();
+
+            ImGui.Separator();
+
+            bool contextMenuEnabled = _configuration.ContextMenu.Enabled;
+            if (ImGui.Checkbox("Inventory context menu integration", ref contextMenuEnabled))
+            {
+                _configuration.ContextMenu.Enabled = contextMenuEnabled;
+                Save();
+            }
+
+            ImGui.BeginDisabled(!contextMenuEnabled);
+            ImGui.Indent(30);
+            bool contextMenuOnlyWhenConfigIsOpen = _configuration.ContextMenu.OnlyWhenConfigIsOpen;
+            if (ImGui.Checkbox("Only add menu entries while config window is open",
+                    ref contextMenuOnlyWhenConfigIsOpen))
+            {
+                _configuration.ContextMenu.OnlyWhenConfigIsOpen = contextMenuOnlyWhenConfigIsOpen;
+                Save();
+            }
+
+            ImGui.Unindent(30);
+            ImGui.EndDisabled();
+
             ImGui.EndTabItem();
         }
     }
@@ -307,21 +330,27 @@ public sealed class ConfigWindow : Window
             _searchResults = new();
         else
         {
-            if (_allItems == null)
-            {
-                _allItems = _itemCache.AllItems
-                    .Where(x => !x.IsUnique && !x.IsUntradable)
-                    .Where(x => x.UiCategory != UiCategories.Currency && x.UiCategory != UiCategories.Crystals &&
-                                x.UiCategory != UiCategories.Unobtainable)
-                    .Select(x => (x.ItemId, x.Name.ToString()))
-                    .ToList();
-            }
-
-            _searchResults = _allItems.Where(x => x.Name.Contains(_itemName, StringComparison.CurrentCultureIgnoreCase)
-                                                  || (uint.TryParse(_itemName, out uint itemId) && x.ItemId == itemId))
+            _searchResults = EnsureAllItemsLoaded().Where(x =>
+                    x.Name.Contains(_itemName, StringComparison.CurrentCultureIgnoreCase)
+                    || (uint.TryParse(_itemName, out uint itemId) && x.ItemId == itemId))
                 .OrderBy(x => _itemName.EqualsIgnoreCase(x.Name) ? string.Empty : x.Name)
                 .ToList();
         }
+    }
+
+    private List<(uint ItemId, string Name)> EnsureAllItemsLoaded()
+    {
+        if (_allItems == null)
+        {
+            _allItems = _itemCache.AllItems
+                .Where(x => !x.IsUnique && !x.IsUntradable)
+                .Where(x => x.UiCategory != UiCategories.Currency && x.UiCategory != UiCategories.Crystals &&
+                            x.UiCategory != UiCategories.Unobtainable)
+                .Select(x => (x.ItemId, x.Name.ToString()))
+                .ToList();
+        }
+
+        return _allItems;
     }
 
     private void Save()
@@ -330,5 +359,26 @@ public sealed class ConfigWindow : Window
         _pluginInterface.SavePluginConfig(_configuration);
 
         ConfigSaved?.Invoke(this, EventArgs.Empty);
+    }
+
+    internal void AddToDiscardList(uint itemId)
+    {
+        var item = EnsureAllItemsLoaded().SingleOrDefault(x => x.ItemId == itemId);
+        if (item.ItemId != 0)
+        {
+            _discarding.Add(item);
+            Save();
+        }
+    }
+
+    internal void RemoveFromDiscardList(uint itemId)
+    {
+        if (_discarding.RemoveAll(x => x.ItemId == itemId) > 0)
+            Save();
+    }
+
+    public bool CanItemBeConfigured(uint itemId)
+    {
+        return EnsureAllItemsLoaded().SingleOrDefault(x => x.ItemId == itemId).ItemId == itemId;
     }
 }
