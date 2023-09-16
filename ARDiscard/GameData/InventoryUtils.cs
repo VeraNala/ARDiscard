@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Data;
-using Dalamud.Hooking;
 using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Excel.GeneratedSheets;
 
 namespace ARDiscard.GameData;
 
-public class InventoryUtils : IDisposable
+public sealed class InventoryUtils
 {
     private static readonly InventoryType[] DefaultInventoryTypes =
     {
@@ -55,30 +52,28 @@ public class InventoryUtils : IDisposable
         SignatureHelper.Initialise(this);
     }
 
-    public void Dispose()
-    {
-    }
-
     public unsafe List<ItemWrapper> GetAllItemsToDiscard()
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
 
         InventoryManager* inventoryManager = InventoryManager.Instance();
         foreach (InventoryType inventoryType in DefaultInventoryTypes)
-            toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, false));
+            toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, false, null));
 
         if (_configuration.Armoury.DiscardFromArmouryChest)
         {
+            var gearsetItems = GetAllGearsetItems();
+
             if (_configuration.Armoury.CheckLeftSideGear)
             {
                 foreach (InventoryType inventoryType in LeftSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, true));
+                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, true, gearsetItems));
             }
 
             if (_configuration.Armoury.CheckRightSideGear)
             {
                 foreach (InventoryType inventoryType in RightSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, true));
+                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, true, gearsetItems));
             }
         }
 
@@ -94,10 +89,9 @@ public class InventoryUtils : IDisposable
     }
 
     private unsafe IReadOnlyList<ItemWrapper> GetItemsToDiscard(InventoryManager* inventoryManager,
-        InventoryType inventoryType, bool doGearChecks)
+        InventoryType inventoryType, bool doGearChecks, IReadOnlyList<uint>? gearsetItems)
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
-
         InventoryContainer* container = inventoryManager->GetInventoryContainer(inventoryType);
         //PluginLog.Verbose($"Checking {inventoryType}, {container->Size}");
         for (int i = 0; i < container->Size; ++i)
@@ -110,7 +104,7 @@ public class InventoryUtils : IDisposable
 
                 if (doGearChecks)
                 {
-                    if (IsItemPartOfGearset(item->ItemID))
+                    if (gearsetItems == null || gearsetItems.Contains(item->ItemID))
                         continue;
 
                     ItemCache.CachedItemInfo? itemInfo = _itemCache.GetItem(item->ItemID);
@@ -138,12 +132,13 @@ public class InventoryUtils : IDisposable
         return toDiscard;
     }
 
-    private unsafe bool IsItemPartOfGearset(uint searchForItemId)
+    private unsafe List<uint>? GetAllGearsetItems()
     {
         var gearsetModule = RaptureGearsetModule.Instance();
         if (gearsetModule == null)
-            return true; // can't check gearsets, pretend everything is part of one
+            return null;
 
+        List<uint> allGearsetItems = new();
         for (int i = 0; i < 100; ++i)
         {
             var gearset = gearsetModule->GetGearset(i);
@@ -166,17 +161,20 @@ public class InventoryUtils : IDisposable
                 };
                 foreach (var gearsetItem in gearsetItems)
                 {
-                    if (gearsetItem.ItemID == searchForItemId)
-                        return true;
+                    if (gearsetItem.ItemID != 0)
+                        allGearsetItems.Add(gearsetItem.ItemID);
                 }
             }
         }
 
-        return false;
+        return allGearsetItems;
     }
 
     public unsafe void Discard(InventoryItem* item)
     {
+        if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
+            throw new Exception($"Can't discard {item->ItemID}");
+
         _discardItem(AgentInventoryContext.Instance(), item, item->Container, item->Slot, 0);
     }
 

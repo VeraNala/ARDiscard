@@ -277,7 +277,6 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _autoRetainerApi.Dispose();
         ECommonsMain.Dispose();
 
-        _inventoryUtils.Dispose();
         _pluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
         _pluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
         _commandManager.RemoveHandler("/discard");
