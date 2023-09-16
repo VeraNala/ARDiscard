@@ -2,23 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Data;
+using ARDiscard.GameData;
 using Dalamud.Game.ClientState;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using ECommons;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Condition = Dalamud.Game.ClientState.Conditions.Condition;
 
-namespace ARDiscard;
+namespace ARDiscard.Windows;
 
-public class ConfigWindow : Window
+public sealed class ConfigWindow : Window
 {
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
-    private readonly DataManager _dataManager;
+    private readonly ItemCache _itemCache;
     private readonly ClientState _clientState;
+    private readonly Condition _condition;
     private string _itemName = string.Empty;
 
     private List<(uint ItemId, string Name)> _searchResults = new();
@@ -26,14 +29,18 @@ public class ConfigWindow : Window
     private List<(uint ItemId, string Name)>? _allItems = null;
     private bool _resetKeyboardFocus = true;
 
-    public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, DataManager dataManager,
-        ClientState clientState)
+    public event EventHandler? DiscardNowClicked;
+    public event EventHandler? ConfigSaved;
+
+    public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, ItemCache itemCache,
+        ClientState clientState, Condition condition)
         : base("Auto Discard###AutoDiscardConfig")
     {
         _pluginInterface = pluginInterface;
         _configuration = configuration;
-        _dataManager = dataManager;
+        _itemCache = itemCache;
         _clientState = clientState;
+        _condition = condition;
 
         Size = new Vector2(600, 400);
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -45,7 +52,7 @@ public class ConfigWindow : Window
         };
 
         _discarding.AddRange(_configuration.DiscardingItems
-            .Select(x => (x, dataManager.GetExcelSheet<Item>()?.GetRow(x)?.Name?.ToString() ?? x.ToString())).ToList());
+            .Select(x => (x, itemCache.GetItemName(x))).ToList());
     }
 
     public override void Draw()
@@ -56,6 +63,13 @@ public class ConfigWindow : Window
             _configuration.RunAfterVenture = runAfterVenture;
             Save();
         }
+
+        ImGui.SameLine(ImGui.GetWindowWidth() - 115 * ImGuiHelpers.GlobalScale);
+        ImGui.BeginDisabled(!_clientState.IsLoggedIn || !_condition[ConditionFlag.NormalConditions] ||
+                            DiscardNowClicked == null);
+        if (ImGui.Button("Preview Discards"))
+            DiscardNowClicked!.Invoke(this, EventArgs.Empty);
+        ImGui.EndDisabled();
 
         bool runBeforeLogout = _configuration.RunBeforeLogout;
         if (ImGui.Checkbox("[Global] Run before logging out in Multi-Mode", ref runBeforeLogout))
@@ -68,6 +82,7 @@ public class ConfigWindow : Window
         {
             DrawDiscardList();
             DrawExcludedCharacters();
+            DrawExperimentalSettings();
 
             ImGui.EndTabBar();
         }
@@ -170,7 +185,7 @@ public class ConfigWindow : Window
     {
         if (ImGui.BeginTabItem("Excluded Characters"))
         {
-            if (_clientState.IsLoggedIn && _clientState.LocalContentId > 0)
+            if (_clientState is { IsLoggedIn: true, LocalContentId: > 0 })
             {
                 string worldName = _clientState.LocalPlayer?.HomeWorld.GameData?.Name ?? "??";
                 ImGui.TextWrapped(
@@ -243,6 +258,49 @@ public class ConfigWindow : Window
         }
     }
 
+    private void DrawExperimentalSettings()
+    {
+        if (ImGui.BeginTabItem("Experimental Settings"))
+        {
+            bool discardFromArmouryChest = _configuration.Armoury.DiscardFromArmouryChest;
+            if (ImGui.Checkbox("Discard items from Armoury Chest", ref discardFromArmouryChest))
+            {
+                _configuration.Armoury.DiscardFromArmouryChest = discardFromArmouryChest;
+                Save();
+            }
+
+            ImGui.BeginDisabled(!discardFromArmouryChest);
+            ImGui.Indent(30);
+
+            bool leftSideGear = _configuration.Armoury.CheckLeftSideGear;
+            if (ImGui.Checkbox("Discard when items are found in Head/Body/Hands/Legs/Feet", ref leftSideGear))
+            {
+                _configuration.Armoury.CheckLeftSideGear = leftSideGear;
+                Save();
+            }
+
+            bool rightSideGear = _configuration.Armoury.CheckRightSideGear;
+            if (ImGui.Checkbox("Discard when items are found in Accessories", ref rightSideGear))
+            {
+                _configuration.Armoury.CheckRightSideGear = rightSideGear;
+                Save();
+            }
+
+            ImGui.SetNextItemWidth(ImGuiHelpers.GlobalScale * 100);
+            int maximumItemLevel = _configuration.Armoury.MaximumGearItemLevel;
+            if (ImGui.InputInt("Ignore items >= this ilvl (Armoury Chest only)",
+                    ref maximumItemLevel))
+            {
+                _configuration.Armoury.MaximumGearItemLevel = Math.Max(0, Math.Min(625, maximumItemLevel));
+                Save();
+            }
+
+            ImGui.Unindent(30);
+            ImGui.EndDisabled();
+            ImGui.EndTabItem();
+        }
+    }
+
     private void UpdateResults()
     {
         if (string.IsNullOrEmpty(_itemName))
@@ -251,13 +309,11 @@ public class ConfigWindow : Window
         {
             if (_allItems == null)
             {
-                _allItems = _dataManager.GetExcelSheet<Item>()!
-                    .Where(x => x.RowId != 0)
+                _allItems = _itemCache.AllItems
                     .Where(x => !x.IsUnique && !x.IsUntradable)
-                    .Where(x => x.ItemUICategory?.Value?.Name?.ToString() != "Currency" &&
-                                x.ItemUICategory?.Value?.Name?.ToString() != "Crystal")
-                    .Where(x => !string.IsNullOrEmpty(x.Name.ToString()))
-                    .Select(x => (x.RowId, x.Name.ToString()))
+                    .Where(x => x.UiCategory != UiCategories.Currency && x.UiCategory != UiCategories.Crystals &&
+                                x.UiCategory != UiCategories.Unobtainable)
+                    .Select(x => (x.ItemId, x.Name.ToString()))
                     .ToList();
             }
 
@@ -272,5 +328,7 @@ public class ConfigWindow : Window
     {
         _configuration.DiscardingItems = _discarding.Select(x => x.ItemId).ToList();
         _pluginInterface.SavePluginConfig(_configuration);
+
+        ConfigSaved?.Invoke(this, EventArgs.Empty);
     }
 }

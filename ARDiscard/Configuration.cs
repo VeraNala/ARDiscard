@@ -3,7 +3,7 @@ using Dalamud.Configuration;
 
 namespace ARDiscard;
 
-public class Configuration : IPluginConfiguration
+public sealed class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 1;
     public bool RunAfterVenture { get; set; }
@@ -11,10 +11,20 @@ public class Configuration : IPluginConfiguration
     public List<uint> DiscardingItems { get; set; } = new();
     public List<CharacterInfo> ExcludedCharacters { get; set; } = new();
 
-    public class CharacterInfo
+    public ArmouryConfiguration Armoury { get; set; } = new();
+
+    public sealed class CharacterInfo
     {
         public ulong LocalContentId { get; set; }
         public string CachedPlayerName { get; set; }
         public string CachedWorldName { get; set; }
+    }
+
+    public sealed class ArmouryConfiguration
+    {
+        public bool DiscardFromArmouryChest { get; set; } = false;
+        public bool CheckLeftSideGear { get; set; } = false;
+        public bool CheckRightSideGear { get; set; } = false;
+        public int MaximumGearItemLevel { get; set; } = 45;
     }
 }
