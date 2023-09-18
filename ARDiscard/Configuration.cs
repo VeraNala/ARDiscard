@@ -17,8 +17,8 @@ internal sealed class Configuration : IPluginConfiguration
     public sealed class CharacterInfo
     {
         public ulong LocalContentId { get; set; }
-        public string CachedPlayerName { get; set; }
-        public string CachedWorldName { get; set; }
+        public string? CachedPlayerName { get; set; }
+        public string? CachedWorldName { get; set; }
     }
 
     public sealed class ArmouryConfiguration

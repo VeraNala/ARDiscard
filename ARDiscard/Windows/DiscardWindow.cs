@@ -120,6 +120,7 @@ internal sealed class DiscardWindow : Window
                 Quantity = x.Sum(y => y.InventoryItem->Quantity),
                 Selected = !notSelected.Contains(x.Key),
             })
+            .OrderBy(x => x.Name.ToLower())
             .ToList();
     }
 
