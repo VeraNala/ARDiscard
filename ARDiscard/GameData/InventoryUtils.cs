@@ -97,7 +97,7 @@ internal sealed class InventoryUtils
         for (int i = 0; i < container->Size; ++i)
         {
             var item = container->GetInventorySlot(i);
-            if (item != null)
+            if (item != null && item->ItemID != 0)
             {
                 if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
                     continue;

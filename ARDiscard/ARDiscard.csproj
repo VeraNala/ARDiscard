@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net7.0-windows</TargetFramework>
-        <Version>2.2</Version>
+        <Version>2.3</Version>
         <LangVersion>11.0</LangVersion>
         <Nullable>enable</Nullable>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -17,7 +17,7 @@
 
     <PropertyGroup>
         <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.1.1.4\</AutoRetainerLibPath>
+        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.1.1.6\</AutoRetainerLibPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
