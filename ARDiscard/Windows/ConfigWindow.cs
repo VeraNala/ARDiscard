@@ -321,6 +321,16 @@ internal sealed class ConfigWindow : Window
             ImGui.Unindent(30);
             ImGui.EndDisabled();
 
+            ImGui.Separator();
+
+            ImGui.SetNextItemWidth(ImGuiHelpers.GlobalScale * 100);
+            int ignoreItemCountWhenAbove = (int)_configuration.IgnoreItemCountWhenAbove;
+            if (ImGui.InputInt("Ignore stacks with >= this number of items", ref ignoreItemCountWhenAbove))
+            {
+                _configuration.IgnoreItemCountWhenAbove = (uint)Math.Max(2, ignoreItemCountWhenAbove);
+                Save();
+            }
+
             ImGui.EndTabItem();
         }
     }

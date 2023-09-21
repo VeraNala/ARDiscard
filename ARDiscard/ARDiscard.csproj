@@ -17,7 +17,7 @@
 
     <PropertyGroup>
         <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.1.1.6\</AutoRetainerLibPath>
+        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.1.1.8\</AutoRetainerLibPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">

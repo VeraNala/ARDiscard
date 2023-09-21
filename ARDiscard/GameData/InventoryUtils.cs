@@ -55,10 +55,11 @@ internal sealed class InventoryUtils
     public unsafe List<ItemWrapper> GetAllItemsToDiscard()
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
+        Dictionary<uint, uint> itemCounts = new();
 
         InventoryManager* inventoryManager = InventoryManager.Instance();
         foreach (InventoryType inventoryType in DefaultInventoryTypes)
-            toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, false, null));
+            toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, false, null));
 
         if (_configuration.Armoury.DiscardFromArmouryChest)
         {
@@ -67,17 +68,21 @@ internal sealed class InventoryUtils
             if (_configuration.Armoury.CheckLeftSideGear)
             {
                 foreach (InventoryType inventoryType in LeftSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, true, gearsetItems));
+                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, true,
+                        gearsetItems));
             }
 
             if (_configuration.Armoury.CheckRightSideGear)
             {
                 foreach (InventoryType inventoryType in RightSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, true, gearsetItems));
+                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, true,
+                        gearsetItems));
             }
         }
 
-        return toDiscard;
+        return toDiscard
+            .Where(x => itemCounts[x.InventoryItem->ItemID] < _configuration.IgnoreItemCountWhenAbove)
+            .ToList();
     }
 
     public unsafe InventoryItem* GetNextItemToDiscard(ItemFilter? itemFilter)
@@ -89,7 +94,8 @@ internal sealed class InventoryUtils
     }
 
     private unsafe IReadOnlyList<ItemWrapper> GetItemsToDiscard(InventoryManager* inventoryManager,
-        InventoryType inventoryType, bool doGearChecks, IReadOnlyList<uint>? gearsetItems)
+        InventoryType inventoryType, Dictionary<uint, uint> itemCounts, bool doGearChecks,
+        IReadOnlyList<uint>? gearsetItems)
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
         InventoryContainer* container = inventoryManager->GetInventoryContainer(inventoryType);
@@ -99,6 +105,11 @@ internal sealed class InventoryUtils
             var item = container->GetInventorySlot(i);
             if (item != null && item->ItemID != 0)
             {
+                if (itemCounts.TryGetValue(item->ItemID, out uint itemCount))
+                    itemCounts[item->ItemID] = itemCount + item->Quantity;
+                else
+                    itemCounts[item->ItemID] = item->Quantity;
+
                 if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
                     continue;
 
