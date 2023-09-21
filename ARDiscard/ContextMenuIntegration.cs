@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using ARDiscard.GameData;
+using ARDiscard.GameData.Agents;
 using ARDiscard.Windows;
 using Dalamud.ContextMenu;
-using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace ARDiscard;
 
@@ -37,7 +37,7 @@ internal sealed class ContextMenuIntegration : IDisposable
         _dalamudContextMenu.OnOpenInventoryContextMenu += OpenInventoryContextMenu;
     }
 
-    private void OpenInventoryContextMenu(InventoryContextMenuOpenArgs args)
+    private unsafe void OpenInventoryContextMenu(InventoryContextMenuOpenArgs args)
     {
         if (!_configuration.ContextMenu.Enabled)
             return;
@@ -45,7 +45,18 @@ internal sealed class ContextMenuIntegration : IDisposable
         if (_configuration.ContextMenu.OnlyWhenConfigIsOpen && !_configWindow.IsOpen)
             return;
 
-        if (!(args.ParentAddonName is "Inventory" or "InventoryExpansion" or "InventoryLarge"))
+        if (args.ParentAddonName == "ArmouryBoard")
+        {
+            var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.ArmouryBoard);
+            if (agent == null || !agent->IsAgentActive())
+                return;
+
+            // don't add it in the main/off hand weapon tabs, as we don't use these for discarding
+            var agentArmouryBoard = (AgentArmouryBoard*)agent;
+            if (agentArmouryBoard->CurrentTab is 0 or 6)
+                return;
+        }
+        else if (!(args.ParentAddonName is "Inventory" or "InventoryExpansion" or "InventoryLarge"))
             return;
 
         if (!_configWindow.CanItemBeConfigured(args.ItemId))
