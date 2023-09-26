@@ -354,7 +354,8 @@ internal sealed class ConfigWindow : Window
         if (_allItems == null)
         {
             _allItems = _itemCache.AllItems
-                .Where(x => x is { IsUnique: false, IsUntradable: false, IsIndisposable: false })
+                .Where(x => InternalConfiguration.WhitelistedItems.Contains(x.ItemId) ||
+                            x is { IsUnique: false, IsUntradable: false, IsIndisposable: false })
                 .Where(x => x.UiCategory != UiCategories.Currency && x.UiCategory != UiCategories.Crystals &&
                             x.UiCategory != UiCategories.Unobtainable)
                 .Select(x => (x.ItemId, x.Name.ToString()))

@@ -17,4 +17,15 @@ internal static class InternalConfiguration
         36810, // DSR
         38951, // TOP
     }.AsReadOnly();
+
+    /// <summary>
+    /// Items that are unique/untradeable, but should still be possible to discard. This is moreso because
+    /// 99% of the unique/untradeable items should NOT be selectable for discard, but these are OK.
+    /// </summary>
+    public static readonly IReadOnlyList<uint> WhitelistedItems = new List<uint>
+    {
+        2962, // Onion Doublet
+        3279, // Onion Gaskins
+        3743, // Onion Patterns
+    }.AsReadOnly();
 }
