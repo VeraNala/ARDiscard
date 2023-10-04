@@ -6,6 +6,7 @@ using ARDiscard.Windows;
 using Dalamud.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace ARDiscard;
@@ -18,7 +19,7 @@ internal sealed class ContextMenuIntegration : IDisposable
     private readonly InventoryContextMenuItem _removeItem;
     private readonly DalamudContextMenu _dalamudContextMenu;
 
-    public ContextMenuIntegration(Configuration configuration, ConfigWindow configWindow)
+    public ContextMenuIntegration(DalamudPluginInterface pluginInterface, Configuration configuration, ConfigWindow configWindow)
     {
         _configuration = configuration;
         _configWindow = configWindow;
@@ -33,7 +34,7 @@ internal sealed class ContextMenuIntegration : IDisposable
                 .Append(new UIForegroundPayload(0)).Append("Remove from Auto Discard List"),
             RemoveFromDiscardList);
 
-        _dalamudContextMenu = new();
+        _dalamudContextMenu = new(pluginInterface);
         _dalamudContextMenu.OnOpenInventoryContextMenu += OpenInventoryContextMenu;
     }
 

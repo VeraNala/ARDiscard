@@ -5,18 +5,13 @@ using ARDiscard.GameData;
 using ARDiscard.Windows;
 using AutoRetainerAPI;
 using ClickLib.Clicks;
-using Dalamud.Data;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Memory;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using ECommons;
 using ECommons.Automation;
-using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -32,9 +27,11 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private readonly DiscardWindow _discardWindow;
 
     private readonly DalamudPluginInterface _pluginInterface;
-    private readonly ChatGui _chatGui;
-    private readonly ClientState _clientState;
-    private readonly CommandManager _commandManager;
+    private readonly IChatGui _chatGui;
+    private readonly IClientState _clientState;
+    private readonly IPluginLog _pluginLog;
+    private readonly IGameGui _gameGui;
+    private readonly ICommandManager _commandManager;
     private readonly InventoryUtils _inventoryUtils;
     private readonly AutoRetainerApi _autoRetainerApi;
     private readonly TaskManager _taskManager;
@@ -42,8 +39,8 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private DateTime _cancelDiscardAfter = DateTime.MaxValue;
 
-    public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, CommandManager commandManager, ChatGui chatGui,
-        DataManager dataManager, ClientState clientState, Condition condition)
+    public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
+        IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog, IGameGui gameGui)
     {
         ItemCache itemCache = new ItemCache(dataManager);
 
@@ -51,6 +48,8 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _configuration = (Configuration?)_pluginInterface.GetPluginConfig() ?? new Configuration();
         _chatGui = chatGui;
         _clientState = clientState;
+        _pluginLog = pluginLog;
+        _gameGui = gameGui;
         _commandManager = commandManager;
         _commandManager.AddHandler("/discardconfig", new CommandInfo(OpenConfig)
         {
@@ -64,7 +63,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         {
             HelpMessage = "Show what will be discarded with your current configuration",
         });
-        _inventoryUtils = new InventoryUtils(_configuration, itemCache);
+        _inventoryUtils = new InventoryUtils(_configuration, itemCache, _pluginLog);
 
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
@@ -84,7 +83,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         ECommonsMain.Init(_pluginInterface, this);
         _autoRetainerApi = new();
         _taskManager = new();
-        _contextMenuIntegration = new(_configuration, _configWindow);
+        _contextMenuIntegration = new(_pluginInterface, _configuration, _configWindow);
 
         _clientState.Login += _discardWindow.Login;
         _clientState.Logout += _discardWindow.Logout;
@@ -93,8 +92,6 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _autoRetainerApi.OnCharacterPostprocessStep += CheckCharacterPostProcess;
         _autoRetainerApi.OnCharacterReadyToPostProcess += DoCharacterPostProcess;
     }
-
-    public string Name => "Discard after AutoRetainer";
 
     private void CheckRetainerPostProcess(string retainerName) =>
         CheckPostProcessInternal(PostProcessType.Retainer, retainerName, _configuration.RunAfterVenture);
@@ -106,19 +103,19 @@ public class AutoDiscardPlogon : IDalamudPlugin
     {
         if (!enabled)
         {
-            PluginLog.Information($"Not running post-venture tasks for {name}, disabled globally");
+            _pluginLog.Information($"Not running post-venture tasks for {name}, disabled globally");
         }
         else if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _clientState.LocalContentId))
         {
-            PluginLog.Information($"Not running post-venture tasks for {name}, disabled for current character");
+            _pluginLog.Information($"Not running post-venture tasks for {name}, disabled for current character");
         }
         else if (_inventoryUtils.GetNextItemToDiscard(ItemFilter.None) == null)
         {
-            PluginLog.Information($"Not running post-venture tasks for {name}, no items to discard");
+            _pluginLog.Information($"Not running post-venture tasks for {name}, no items to discard");
         }
         else
         {
-            PluginLog.Information($"Requesting post-processing for {name}");
+            _pluginLog.Information($"Requesting post-processing for {name}");
             if (type == PostProcessType.Retainer)
                 _autoRetainerApi.RequestRetainerPostprocess();
             else if (type == PostProcessType.Character)
@@ -155,20 +152,20 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     private unsafe void DiscardNextItem(PostProcessType type, ItemFilter? itemFilter)
     {
-        PluginLog.Information($"DiscardNextItem (type = {type})");
+        _pluginLog.Information($"DiscardNextItem (type = {type})");
         _discardWindow.Locked = true;
 
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard(itemFilter);
         if (nextItem == null)
         {
-            PluginLog.Information($"No item to discard found");
+            _pluginLog.Information($"No item to discard found");
             FinishDiscarding(type);
         }
         else
         {
             var (inventoryType, slot) = (nextItem->Container, nextItem->Slot);
 
-            PluginLog.Information(
+            _pluginLog.Information(
                 $"Discarding itemId {nextItem->ItemID} in slot {nextItem->Slot} of container {nextItem->Container}.");
             _inventoryUtils.Discard(nextItem);
             _cancelDiscardAfter = DateTime.Now.AddSeconds(15);
@@ -184,7 +181,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         var addon = GetDiscardAddon();
         if (addon != null)
         {
-            PluginLog.Information("Addon is visible, clicking 'yes'");
+            _pluginLog.Information("Addon is visible, clicking 'yes'");
             ((AddonSelectYesno*)addon)->YesButton->AtkComponentBase.SetEnabledState(true);
             ClickSelectYesNo.Using((nint)addon).Yes();
 
@@ -196,19 +193,19 @@ public class AutoDiscardPlogon : IDalamudPlugin
             InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard(itemFilter);
             if (nextItem == null)
             {
-                PluginLog.Information("Addon is not visible, but next item is also no longer set");
+                _pluginLog.Information("Addon is not visible, but next item is also no longer set");
                 FinishDiscarding(type);
             }
             else if (nextItem->Container == inventoryType && nextItem->Slot == slot)
             {
-                PluginLog.Information(
+                _pluginLog.Information(
                     $"Addon is not (yet) visible, still trying to discard item in slot {slot} in inventory {inventoryType}");
                 _taskManager.DelayNext(100);
                 _taskManager.Enqueue(() => ConfirmDiscardItem(type, itemFilter, inventoryType, slot));
             }
             else
             {
-                PluginLog.Information(
+                _pluginLog.Information(
                     $"Addon is not (yet) visible, but slot or inventory type changed, retrying from start");
                 _taskManager.DelayNext(100);
                 _taskManager.Enqueue(() => DiscardNextItem(type, itemFilter));
@@ -222,26 +219,26 @@ public class AutoDiscardPlogon : IDalamudPlugin
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard(itemFilter);
         if (nextItem == null)
         {
-            PluginLog.Information($"Continuing after discard: no next item (type = {type})");
+            _pluginLog.Information($"Continuing after discard: no next item (type = {type})");
             FinishDiscarding(type);
         }
         else if (nextItem->Container == inventoryType && nextItem->Slot == slot)
         {
             if (_cancelDiscardAfter < DateTime.Now)
             {
-                PluginLog.Information("No longer waiting for plugin to pop up, assume discard failed");
+                _pluginLog.Information("No longer waiting for plugin to pop up, assume discard failed");
                 FinishDiscarding(type, "Discarding probably failed due to an error.");
             }
             else
             {
-                PluginLog.Information($"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
+                _pluginLog.Information($"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
                 _taskManager.DelayNext(20);
                 _taskManager.Enqueue(() => ContinueAfterDiscard(type, itemFilter, inventoryType, slot));
             }
         }
         else
         {
-            PluginLog.Information($"ContinueAfterDiscard: Discovered different item to discard");
+            _pluginLog.Information($"ContinueAfterDiscard: Discovered different item to discard");
             _taskManager.EnqueueImmediate(() => DiscardNextItem(type, itemFilter));
         }
     }
@@ -284,19 +281,19 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _commandManager.RemoveHandler("/discardconfig");
     }
 
-    private static unsafe AtkUnitBase* GetDiscardAddon()
+    private unsafe AtkUnitBase* GetDiscardAddon()
     {
         for (int i = 1; i < 100; i++)
         {
             try
             {
-                var addon = (AtkUnitBase*)Svc.GameGui.GetAddonByName("SelectYesno", i);
+                var addon = (AtkUnitBase*)_gameGui.GetAddonByName("SelectYesno", i);
                 if (addon == null) return null;
                 if (addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded)
                 {
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
                     var text = MemoryHelper.ReadSeString(&textNode->NodeText).ExtractText();
-                    PluginLog.Information($"YesNo prompt: {text}");
+                    _pluginLog.Information($"YesNo prompt: {text}");
                     if (text.StartsWith("Discard"))
                     {
                         return addon;

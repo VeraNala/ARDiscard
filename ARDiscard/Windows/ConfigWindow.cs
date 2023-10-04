@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using ARDiscard.GameData;
-using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using ECommons;
 using ImGuiNET;
-using Condition = Dalamud.Game.ClientState.Conditions.Condition;
 
 namespace ARDiscard.Windows;
 
@@ -20,8 +19,8 @@ internal sealed class ConfigWindow : Window
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
-    private readonly ClientState _clientState;
-    private readonly Condition _condition;
+    private readonly IClientState _clientState;
+    private readonly ICondition _condition;
     private string _itemName = string.Empty;
 
     private List<(uint ItemId, string Name)> _searchResults = new();
@@ -33,7 +32,7 @@ internal sealed class ConfigWindow : Window
     public event EventHandler? ConfigSaved;
 
     public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, ItemCache itemCache,
-        ClientState clientState, Condition condition)
+        IClientState clientState, ICondition condition)
         : base("Auto Discard###AutoDiscardConfig")
     {
         _pluginInterface = pluginInterface;

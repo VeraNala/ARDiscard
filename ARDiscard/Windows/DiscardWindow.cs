@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using ARDiscard.GameData;
-using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using ImGuiNET;
 
@@ -15,16 +15,16 @@ internal sealed class DiscardWindow : Window
 {
     private readonly InventoryUtils _inventoryUtils;
     private readonly ItemCache _itemCache;
-    private readonly ClientState _clientState;
-    private readonly Condition _condition;
+    private readonly IClientState _clientState;
+    private readonly ICondition _condition;
 
     private List<SelectableItem> _displayedItems = new();
 
     public event EventHandler? OpenConfigurationClicked;
     public event EventHandler<ItemFilter>? DiscardAllClicked;
 
-    public DiscardWindow(InventoryUtils inventoryUtils, ItemCache itemCache, ClientState clientState,
-        Condition condition)
+    public DiscardWindow(InventoryUtils inventoryUtils, ItemCache itemCache, IClientState clientState,
+        ICondition condition)
         : base("Discard Items")
     {
         _inventoryUtils = inventoryUtils;
@@ -140,7 +140,7 @@ internal sealed class DiscardWindow : Window
         }
     }
 
-    public void Login(object? sender, EventArgs e) => RefreshInventory(false);
+    public void Login() => RefreshInventory(false);
 
-    public void Logout(object? sender, EventArgs e) => _displayedItems.Clear();
+    public void Logout() => _displayedItems.Clear();
 }

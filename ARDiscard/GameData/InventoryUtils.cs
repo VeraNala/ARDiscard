@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Logging;
-using Dalamud.Utility.Signatures;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -38,18 +37,13 @@ internal sealed class InventoryUtils
 
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
+    private readonly IPluginLog _pluginLog;
 
-    private unsafe delegate void DiscardItemDelegate(AgentInventoryContext* inventoryManager, InventoryItem* itemSlot,
-        InventoryType inventory, int slot, uint addonId, int position = -1);
-
-    [Signature("E8 ?? ?? ?? ?? E9 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 ?? 0F B7 48")]
-    private DiscardItemDelegate _discardItem = null!;
-
-    public InventoryUtils(Configuration configuration, ItemCache itemCache)
+    public InventoryUtils(Configuration configuration, ItemCache itemCache, IPluginLog pluginLog)
     {
         _configuration = configuration;
         _itemCache = itemCache;
-        SignatureHelper.Initialise(this);
+        _pluginLog = pluginLog;
     }
 
     public unsafe List<ItemWrapper> GetAllItemsToDiscard()
@@ -129,7 +123,7 @@ internal sealed class InventoryUtils
                 //PluginLog.Verbose($"{i} → {item->ItemID}");
                 if (_configuration.DiscardingItems.Contains(item->ItemID))
                 {
-                    PluginLog.Information(
+                    _pluginLog.Information(
                         $"Found item {item->ItemID} to discard in inventory {inventoryType} in slot {i}");
                     toDiscard.Add(new ItemWrapper { InventoryItem = item });
                 }
@@ -168,7 +162,7 @@ internal sealed class InventoryUtils
                     gearset->Neck,
                     gearset->Wrists,
                     gearset->RingRight,
-                    gearset->RightLeft, // why is this called RightLeft
+                    gearset->RingLeft,
                 };
                 foreach (var gearsetItem in gearsetItems)
                 {
@@ -186,7 +180,7 @@ internal sealed class InventoryUtils
         if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
             throw new Exception($"Can't discard {item->ItemID}");
 
-        _discardItem(AgentInventoryContext.Instance(), item, item->Container, item->Slot, 0);
+        AgentInventoryContext.Instance()->DiscardItem(item, item->Container, item->Slot, 0);
     }
 
     public sealed unsafe class ItemWrapper

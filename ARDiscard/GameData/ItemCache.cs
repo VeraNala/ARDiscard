@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Dalamud.Data;
+using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 
 namespace ARDiscard.GameData;
@@ -8,7 +8,7 @@ internal sealed class ItemCache
 {
     private readonly Dictionary<uint, CachedItemInfo> _items = new();
 
-    public ItemCache(DataManager dataManager)
+    public ItemCache(IDataManager dataManager)
     {
         foreach (var item in dataManager.GetExcelSheet<Item>()!)
         {
