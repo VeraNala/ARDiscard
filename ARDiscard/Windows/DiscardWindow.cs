@@ -5,9 +5,11 @@ using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using ImGuiNET;
+using LLib;
 
 namespace ARDiscard.Windows;
 
@@ -17,20 +19,22 @@ internal sealed class DiscardWindow : Window
     private readonly ItemCache _itemCache;
     private readonly IClientState _clientState;
     private readonly ICondition _condition;
+    private readonly DalamudPluginInterface _pluginInterface;
 
     private List<SelectableItem> _displayedItems = new();
 
     public event EventHandler? OpenConfigurationClicked;
     public event EventHandler<ItemFilter>? DiscardAllClicked;
 
-    public DiscardWindow(InventoryUtils inventoryUtils, ItemCache itemCache, IClientState clientState,
-        ICondition condition)
-        : base("Discard Items")
+    public DiscardWindow(DalamudPluginInterface pluginInterface, InventoryUtils inventoryUtils, ItemCache itemCache,
+        IClientState clientState, ICondition condition)
+        : base("Discard Items###AutoDiscardDiscard")
     {
         _inventoryUtils = inventoryUtils;
         _itemCache = itemCache;
         _clientState = clientState;
         _condition = condition;
+        _pluginInterface = pluginInterface;
 
         Size = new Vector2(600, 400);
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -46,6 +50,8 @@ internal sealed class DiscardWindow : Window
 
     public override void Draw()
     {
+        LImGui.AddPatreonIcon(_pluginInterface);
+
         ImGui.Text("With your current configuration, the following items would be discarded:");
 
         ImGui.BeginDisabled(Locked);

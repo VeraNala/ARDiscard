@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
@@ -11,6 +12,7 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using ECommons;
 using ImGuiNET;
+using LLib;
 
 namespace ARDiscard.Windows;
 
@@ -56,6 +58,8 @@ internal sealed class ConfigWindow : Window
 
     public override void Draw()
     {
+        LImGui.AddPatreonIcon(_pluginInterface);
+
         bool runAfterVenture = _configuration.RunAfterVenture;
         if (ImGui.Checkbox("[Global] Run automatically after AutoRetainer's venture", ref runAfterVenture))
         {
@@ -372,20 +376,28 @@ internal sealed class ConfigWindow : Window
         ConfigSaved?.Invoke(this, EventArgs.Empty);
     }
 
-    internal void AddToDiscardList(uint itemId)
+    internal bool AddToDiscardList(uint itemId)
     {
         var item = EnsureAllItemsLoaded().SingleOrDefault(x => x.ItemId == itemId);
         if (item.ItemId != 0)
         {
             _discarding.Add(item);
             Save();
+            return true;
         }
+
+        return false;
     }
 
-    internal void RemoveFromDiscardList(uint itemId)
+    internal bool RemoveFromDiscardList(uint itemId)
     {
         if (_discarding.RemoveAll(x => x.ItemId == itemId) > 0)
+        {
             Save();
+            return true;
+        }
+
+        return false;
     }
 
     public bool CanItemBeConfigured(uint itemId)

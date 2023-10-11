@@ -17,12 +17,16 @@
 
     <PropertyGroup>
         <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.2.0.6\</AutoRetainerLibPath>
+        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.2.1.1\</AutoRetainerLibPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
         <DalamudLibPath>$(DALAMUD_HOME)/</DalamudLibPath>
     </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\LLib\LLib.csproj" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Dalamud.ContextMenu" Version="1.3.1" />
@@ -64,7 +68,6 @@
             <HintPath>$(AutoRetainerLibPath)ClickLib.dll</HintPath>
         </Reference>
     </ItemGroup>
-
 
     <Target Name="RenameLatestZip" AfterTargets="PackagePlugin">
         <Exec Command="rename $(OutDir)$(AssemblyName)\latest.zip $(AssemblyName)-$(Version).zip"/>
