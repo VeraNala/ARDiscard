@@ -40,7 +40,8 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private DateTime _cancelDiscardAfter = DateTime.MaxValue;
 
     public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
-        IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog, IGameGui gameGui)
+        IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog,
+        IGameGui gameGui)
     {
         ItemCache itemCache = new ItemCache(dataManager);
 
@@ -231,7 +232,8 @@ public class AutoDiscardPlogon : IDalamudPlugin
             }
             else
             {
-                _pluginLog.Information($"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
+                _pluginLog.Information(
+                    $"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
                 _taskManager.DelayNext(20);
                 _taskManager.Enqueue(() => ContinueAfterDiscard(type, itemFilter, inventoryType, slot));
             }

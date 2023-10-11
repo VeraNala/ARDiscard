@@ -82,7 +82,11 @@ internal sealed class ContextMenuIntegration : IDisposable
             _chatGui.Print(new SeString(new UIForegroundPayload(52))
                 .Append($"\ue05f ")
                 .Append(new UIForegroundPayload(0))
-                .Append($"Added '{_itemCache.GetItemName(args.ItemId)}' to Auto Discard List."));
+                .Append($"Added ")
+                .Append(new UIForegroundPayload(52))
+                .Append(_itemCache.GetItemName(args.ItemId))
+                .Append(new UIForegroundPayload(0))
+                .Append(" to Auto Discard List."));
         }
     }
 
@@ -93,7 +97,11 @@ internal sealed class ContextMenuIntegration : IDisposable
             _chatGui.Print(new SeString(new UIForegroundPayload(52))
                 .Append($"\ue05f ")
                 .Append(new UIForegroundPayload(0))
-                .Append($"Removed '{_itemCache.GetItemName(args.ItemId)}' from Auto Discard List."));
+                .Append($"Removed ")
+                .Append(new UIForegroundPayload(52))
+                .Append(_itemCache.GetItemName(args.ItemId))
+                .Append(new UIForegroundPayload(0))
+                .Append(" from Auto Discard List."));
         }
     }
 
