@@ -7,20 +7,26 @@ using Dalamud.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace ARDiscard;
 
 internal sealed class ContextMenuIntegration : IDisposable
 {
+    private readonly IChatGui _chatGui;
+    private readonly ItemCache _itemCache;
     private readonly Configuration _configuration;
     private readonly ConfigWindow _configWindow;
     private readonly InventoryContextMenuItem _addItem;
     private readonly InventoryContextMenuItem _removeItem;
     private readonly DalamudContextMenu _dalamudContextMenu;
 
-    public ContextMenuIntegration(DalamudPluginInterface pluginInterface, Configuration configuration, ConfigWindow configWindow)
+    public ContextMenuIntegration(DalamudPluginInterface pluginInterface, IChatGui chatGui, ItemCache itemCache,
+        Configuration configuration, ConfigWindow configWindow)
     {
+        _chatGui = chatGui;
+        _itemCache = itemCache;
         _configuration = configuration;
         _configWindow = configWindow;
         _addItem = new InventoryContextMenuItem(
@@ -71,12 +77,24 @@ internal sealed class ContextMenuIntegration : IDisposable
 
     private void AddToDiscardList(InventoryContextMenuItemSelectedArgs args)
     {
-        _configWindow.AddToDiscardList(args.ItemId);
+        if (_configWindow.AddToDiscardList(args.ItemId))
+        {
+            _chatGui.Print(new SeString(new UIForegroundPayload(52))
+                .Append($"\ue05f ")
+                .Append(new UIForegroundPayload(0))
+                .Append($"Added '{_itemCache.GetItemName(args.ItemId)}' to Auto Discard List."));
+        }
     }
 
     private void RemoveFromDiscardList(InventoryContextMenuItemSelectedArgs args)
     {
-        _configWindow.RemoveFromDiscardList(args.ItemId);
+        if (_configWindow.RemoveFromDiscardList(args.ItemId))
+        {
+            _chatGui.Print(new SeString(new UIForegroundPayload(52))
+                .Append($"\ue05f ")
+                .Append(new UIForegroundPayload(0))
+                .Append($"Removed '{_itemCache.GetItemName(args.ItemId)}' from Auto Discard List."));
+        }
     }
 
     public void Dispose()
