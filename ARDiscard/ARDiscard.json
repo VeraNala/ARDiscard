@@ -1,7 +1,7 @@
 ﻿{
-  "Name": "Discard after AutoRetainer",
+  "Name": "Discard Helper",
   "Author": "Liza Carvelli",
-  "Punchline": "",
+  "Punchline": "Discard items automatically via a command or as a post-venture task for AutoRetainer",
   "Description": "",
   "RepoUrl": "https://git.carvel.li/liza/ARDiscard",
   "IconUrl": "https://git.carvel.li/liza/plugin-repo/raw/branch/master/dist/ARDiscard.png"
