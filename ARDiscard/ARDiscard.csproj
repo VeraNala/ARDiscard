@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net7.0-windows</TargetFramework>
-        <Version>3.1</Version>
+        <Version>3.2</Version>
         <LangVersion>11.0</LangVersion>
         <Nullable>enable</Nullable>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -24,8 +24,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj" />
-        <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
+        <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj"/>
+        <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj"/>
         <ProjectReference Include="..\LLib\LLib.csproj"/>
     </ItemGroup>
 

@@ -68,7 +68,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
 
-        _discardWindow = new(_pluginInterface, _inventoryUtils, itemCache, clientState, condition);
+        _discardWindow = new(_inventoryUtils, itemCache, clientState, condition);
         _windowSystem.AddWindow(_discardWindow);
 
         _configWindow = new(_pluginInterface, _configuration, itemCache, clientState, condition);

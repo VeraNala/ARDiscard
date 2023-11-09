@@ -16,7 +16,7 @@ using LLib;
 
 namespace ARDiscard.Windows;
 
-internal sealed class ConfigWindow : Window
+internal sealed class ConfigWindow : LImGui.LWindow
 {
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
@@ -58,8 +58,6 @@ internal sealed class ConfigWindow : Window
 
     public override void Draw()
     {
-        LImGui.AddPatreonIcon(_pluginInterface);
-
         bool runAfterVenture = _configuration.RunAfterVenture;
         if (ImGui.Checkbox("[Global] Run automatically after AutoRetainer's venture", ref runAfterVenture))
         {
