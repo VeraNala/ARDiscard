@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARDiscard", "ARDiscard\ARDi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LLib", "LLib\LLib.csproj", "{2E159617-A667-4EC8-B3A8-8B087315C181}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoRetainerAPI", "AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj", "{265C467A-3687-42AE-A178-CA7186852B38}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommons", "ECommons\ECommons\ECommons.csproj", "{F4483C28-62CF-4EB2-A51E-FF0CF4B1E727}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{2E159617-A667-4EC8-B3A8-8B087315C181}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E159617-A667-4EC8-B3A8-8B087315C181}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E159617-A667-4EC8-B3A8-8B087315C181}.Release|Any CPU.Build.0 = Release|Any CPU
+		{265C467A-3687-42AE-A178-CA7186852B38}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{265C467A-3687-42AE-A178-CA7186852B38}.Debug|Any CPU.Build.0 = Debug|x64
+		{265C467A-3687-42AE-A178-CA7186852B38}.Release|Any CPU.ActiveCfg = Release|x64
+		{265C467A-3687-42AE-A178-CA7186852B38}.Release|Any CPU.Build.0 = Release|x64
+		{F4483C28-62CF-4EB2-A51E-FF0CF4B1E727}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{F4483C28-62CF-4EB2-A51E-FF0CF4B1E727}.Debug|Any CPU.Build.0 = Debug|x64
+		{F4483C28-62CF-4EB2-A51E-FF0CF4B1E727}.Release|Any CPU.ActiveCfg = Release|x64
+		{F4483C28-62CF-4EB2-A51E-FF0CF4B1E727}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 EndGlobal

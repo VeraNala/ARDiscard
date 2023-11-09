@@ -17,7 +17,6 @@
 
     <PropertyGroup>
         <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-        <AutoRetainerLibPath>$(appdata)\XIVLauncher\installedPlugins\AutoRetainer\4.2.1.1\</AutoRetainerLibPath>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
@@ -25,6 +24,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\AutoRetainerAPI\AutoRetainerAPI\AutoRetainerAPI.csproj" />
+        <ProjectReference Include="..\ECommons\ECommons\ECommons.csproj" />
         <ProjectReference Include="..\LLib\LLib.csproj"/>
     </ItemGroup>
 
@@ -57,15 +58,6 @@
         <Reference Include="FFXIVClientStructs">
             <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
             <Private>false</Private>
-        </Reference>
-        <Reference Include="AutoRetainerAPI">
-            <HintPath>$(AutoRetainerLibPath)AutoRetainerAPI.dll</HintPath>
-        </Reference>
-        <Reference Include="ECommons">
-            <HintPath>$(AutoRetainerLibPath)ECommons.dll</HintPath>
-        </Reference>
-        <Reference Include="ClickLib">
-            <HintPath>$(AutoRetainerLibPath)ClickLib.dll</HintPath>
         </Reference>
     </ItemGroup>
 

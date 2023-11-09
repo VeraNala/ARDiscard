@@ -4,7 +4,6 @@ using System.Linq;
 using ARDiscard.GameData;
 using ARDiscard.Windows;
 using AutoRetainerAPI;
-using ClickLib.Clicks;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.Memory;
@@ -184,7 +183,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         {
             _pluginLog.Information("Addon is visible, clicking 'yes'");
             ((AddonSelectYesno*)addon)->YesButton->AtkComponentBase.SetEnabledState(true);
-            ClickSelectYesNo.Using((nint)addon).Yes();
+            addon->FireCallbackInt(0);
 
             _taskManager.DelayNext(20);
             _taskManager.Enqueue(() => ContinueAfterDiscard(type, itemFilter, inventoryType, slot));
