@@ -19,6 +19,7 @@ internal sealed class ItemCache
             {
                 ItemId = item.RowId,
                 Name = item.Name.ToString(),
+                IconId = item.Icon,
                 ILvl = item.LevelItem.Row,
                 Rarity = item.Rarity,
                 IsUnique = item.IsUnique,
@@ -26,6 +27,7 @@ internal sealed class ItemCache
                 IsIndisposable = item.IsIndisposable,
                 Level = item.LevelEquip,
                 UiCategory = item.ItemUICategory.Row,
+                UiCategoryName = item.ItemUICategory.Value!.Name.ToString(),
             };
         }
     }
@@ -46,10 +48,18 @@ internal sealed class ItemCache
         return string.Empty;
     }
 
+    public ushort GetItemIconId(uint itemId)
+    {
+        if (_items.TryGetValue(itemId, out var item))
+            return item.IconId;
+        return ushort.MinValue;
+    }
+
     public sealed class CachedItemInfo
     {
         public required uint ItemId { get; init; }
         public required string Name { get; init; }
+        public required ushort IconId { get; init; }
         public required uint ILvl { get; init; }
         public required uint Level { get; init; }
         public required byte Rarity { get; init; }
@@ -62,5 +72,6 @@ internal sealed class ItemCache
         public required bool IsIndisposable { get; init; }
 
         public required uint UiCategory { get; init; }
+        public required string UiCategoryName { get; init; }
     }
 }

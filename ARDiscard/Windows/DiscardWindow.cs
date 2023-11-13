@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using ImGuiNET;
@@ -16,22 +16,26 @@ internal sealed class DiscardWindow : LImGui.LWindow
 {
     private readonly InventoryUtils _inventoryUtils;
     private readonly ItemCache _itemCache;
+    private readonly IconCache _iconCache;
     private readonly IClientState _clientState;
     private readonly ICondition _condition;
+    private readonly Configuration _configuration;
 
     private List<SelectableItem> _displayedItems = new();
 
     public event EventHandler? OpenConfigurationClicked;
     public event EventHandler<ItemFilter>? DiscardAllClicked;
 
-    public DiscardWindow(InventoryUtils inventoryUtils, ItemCache itemCache,
-        IClientState clientState, ICondition condition)
+    public DiscardWindow(InventoryUtils inventoryUtils, ItemCache itemCache, IconCache iconCache,
+        IClientState clientState, ICondition condition, Configuration configuration)
         : base("Discard Items###AutoDiscardDiscard")
     {
         _inventoryUtils = inventoryUtils;
         _itemCache = itemCache;
+        _iconCache = iconCache;
         _clientState = clientState;
         _condition = condition;
+        _configuration = configuration;
 
         Size = new Vector2(600, 400);
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -62,10 +66,22 @@ internal sealed class DiscardWindow : LImGui.LWindow
             }
             else
             {
-                foreach (var displayedItem in _displayedItems)
+                if (_configuration.Preview.GroupByCategory)
                 {
-                    if (ImGui.Selectable(displayedItem.ToString(), displayedItem.Selected))
-                        displayedItem.Selected = !displayedItem.Selected;
+                    foreach (var category in _displayedItems.OrderBy(x => x.UiCategory)
+                                 .GroupBy(x => new { x.UiCategory, x.UiCategoryName }))
+                    {
+                        ImGui.Text($"{category.Key.UiCategoryName}");
+                        ImGui.Indent();
+                        foreach (var displayedItem in category)
+                            DrawItem(displayedItem);
+                        ImGui.Unindent();
+                    }
+                }
+                else
+                {
+                    foreach (var displayedItem in _displayedItems)
+                        DrawItem(displayedItem);
                 }
             }
         }
@@ -95,6 +111,23 @@ internal sealed class DiscardWindow : LImGui.LWindow
         ImGui.EndDisabled();
     }
 
+    private void DrawItem(SelectableItem displayedItem)
+    {
+        if (_configuration.Preview.ShowIcons)
+        {
+            IDalamudTextureWrap? icon = _iconCache.GetIcon(displayedItem.IconId);
+            if (icon != null)
+            {
+                ImGui.Image(icon.ImGuiHandle, new Vector2(23, 23));
+                ImGui.SameLine();
+                ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 3);
+            }
+        }
+
+        if (ImGui.Selectable(displayedItem.ToString(), displayedItem.Selected))
+            displayedItem.Selected = !displayedItem.Selected;
+    }
+
     public override void OnOpen() => RefreshInventory(false);
 
     public override void OnClose() => _displayedItems.Clear();
@@ -113,13 +146,21 @@ internal sealed class DiscardWindow : LImGui.LWindow
         }
 
         _displayedItems = _inventoryUtils.GetAllItemsToDiscard()
-            .GroupBy(x => x.InventoryItem->ItemID)
+            .GroupBy(x => new
+            {
+                ItemId = x.InventoryItem->ItemID,
+                ItemInfo = _itemCache.GetItem(x.InventoryItem->ItemID),
+            })
+            .Where(x => x.Key.ItemInfo != null)
             .Select(x => new SelectableItem
             {
-                ItemId = x.Key,
-                Name = _itemCache.GetItemName(x.Key),
+                ItemId = x.Key.ItemId,
+                Name = x.Key.ItemInfo!.Name,
+                IconId = x.Key.ItemInfo!.IconId,
                 Quantity = x.Sum(y => y.InventoryItem->Quantity),
-                Selected = !notSelected.Contains(x.Key),
+                UiCategory = x.Key.ItemInfo!.UiCategory,
+                UiCategoryName = x.Key.ItemInfo!.UiCategoryName,
+                Selected = !notSelected.Contains(x.Key.ItemId),
             })
             .OrderBy(x => x.Name.ToLower())
             .ToList();
@@ -129,8 +170,11 @@ internal sealed class DiscardWindow : LImGui.LWindow
     {
         public required uint ItemId { get; init; }
         public required string Name { get; init; }
+        public required ushort IconId { get; init; }
         public required long Quantity { get; init; }
-        public bool Selected { get; set; } = true;
+        public required uint UiCategory { get; init; }
+        public required string UiCategoryName { get; init; }
+        public required bool Selected { get; set; }
 
         public override string ToString()
         {

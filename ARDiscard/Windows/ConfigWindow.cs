@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using ECommons;
@@ -329,6 +327,22 @@ internal sealed class ConfigWindow : LImGui.LWindow
             if (ImGui.InputInt("Ignore stacks with >= this number of items", ref ignoreItemCountWhenAbove))
             {
                 _configuration.IgnoreItemCountWhenAbove = (uint)Math.Max(2, ignoreItemCountWhenAbove);
+                Save();
+            }
+
+            ImGui.Separator();
+
+            bool groupPreviewByCategory = _configuration.Preview.GroupByCategory;
+            if (ImGui.Checkbox("Group items in 'Preview' by category", ref groupPreviewByCategory))
+            {
+                _configuration.Preview.GroupByCategory = groupPreviewByCategory;
+                Save();
+            }
+
+            bool showIconsInPreview = _configuration.Preview.ShowIcons;
+            if (ImGui.Checkbox("Show icons in 'Preview'", ref showIconsInPreview))
+            {
+                _configuration.Preview.ShowIcons = showIconsInPreview;
                 Save();
             }
 

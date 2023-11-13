@@ -13,6 +13,7 @@ internal sealed class Configuration : IPluginConfiguration
 
     public ArmouryConfiguration Armoury { get; set; } = new();
     public ContextMenuConfiguration ContextMenu { get; set; } = new();
+    public PreviewConfiguration Preview { get; set; } = new();
     public uint IgnoreItemCountWhenAbove { get; set; } = 50;
 
     public sealed class CharacterInfo
@@ -34,5 +35,11 @@ internal sealed class Configuration : IPluginConfiguration
     {
         public bool Enabled { get; set; } = false;
         public bool OnlyWhenConfigIsOpen { get; set; } = true;
+    }
+
+    public sealed class PreviewConfiguration
+    {
+        public bool GroupByCategory { get; set; } = true;
+        public bool ShowIcons { get; set; } = true;
     }
 }

@@ -14,6 +14,7 @@ using ECommons.Automation;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using LLib;
 
 namespace ARDiscard;
 
@@ -32,6 +33,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private readonly IGameGui _gameGui;
     private readonly ICommandManager _commandManager;
     private readonly InventoryUtils _inventoryUtils;
+    private readonly IconCache _iconCache;
     private readonly AutoRetainerApi _autoRetainerApi;
     private readonly TaskManager _taskManager;
     private readonly ContextMenuIntegration _contextMenuIntegration;
@@ -40,7 +42,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
         IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog,
-        IGameGui gameGui)
+        IGameGui gameGui, ITextureProvider textureProvider)
     {
         ItemCache itemCache = new ItemCache(dataManager);
 
@@ -64,11 +66,12 @@ public class AutoDiscardPlogon : IDalamudPlugin
             HelpMessage = "Show what will be discarded with your current configuration",
         });
         _inventoryUtils = new InventoryUtils(_configuration, itemCache, _pluginLog);
+        _iconCache = new IconCache(textureProvider);
 
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
 
-        _discardWindow = new(_inventoryUtils, itemCache, clientState, condition);
+        _discardWindow = new(_inventoryUtils, itemCache, _iconCache, clientState, condition, _configuration);
         _windowSystem.AddWindow(_discardWindow);
 
         _configWindow = new(_pluginInterface, _configuration, itemCache, clientState, condition);
@@ -274,6 +277,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _contextMenuIntegration.Dispose();
         _autoRetainerApi.Dispose();
         ECommonsMain.Dispose();
+        _iconCache.Dispose();
 
         _pluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
         _pluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
