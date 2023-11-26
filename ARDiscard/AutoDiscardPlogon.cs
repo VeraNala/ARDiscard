@@ -161,7 +161,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         InventoryItem* nextItem = _inventoryUtils.GetNextItemToDiscard(itemFilter);
         if (nextItem == null)
         {
-            _pluginLog.Information($"No item to discard found");
+            _pluginLog.Information("No item to discard found");
             FinishDiscarding(type);
         }
         else
