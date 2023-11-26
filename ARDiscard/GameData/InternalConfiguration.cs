@@ -37,5 +37,16 @@ internal static class InternalConfiguration
         9389, // Antique Gauntlets
         9390, // Antique Breeches
         9391, // Antique Sollerets
+
+        // Fate drops used in tribal quests
+        7001, // Flamefang Choker (Amalj'aa)
+        7002, // Proto Armor Identification Key (Sylphs)
+        7003, // Kafre's Tusk (Sylphs)
+        7797, // Titan Mythrilshield (Kobolds)
+        7798, // Coral Armband (Sahagin)
+        7802, // Titan Steelshield (Kobolds)
+        7803, // Titan Electrumshield (Kobolds)
+        7804, // Coral Band (Sahagin)
+        7805, // Coral Necklace (Sahagin)
     }.AsReadOnly();
 }
