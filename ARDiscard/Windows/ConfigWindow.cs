@@ -16,6 +16,8 @@ namespace ARDiscard.Windows;
 
 internal sealed class ConfigWindow : LImGui.LWindow
 {
+    private const int ResultLimit = 200;
+
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
@@ -95,7 +97,16 @@ internal sealed class ConfigWindow : LImGui.LWindow
             var ws = ImGui.GetWindowSize();
             if (ImGui.BeginChild("Left", new Vector2(Math.Max(10, ws.X / 2), -1), true))
             {
-                ImGui.Text("Search");
+                if (!string.IsNullOrEmpty(_itemName))
+                {
+                    if (_searchResults.Count > ResultLimit)
+                        ImGui.Text($"Search ({ResultLimit:N0} out of {_searchResults.Count:N0} matches)");
+                    else
+                        ImGui.Text($"Search ({_searchResults.Count:N0} matches)");
+                }
+                else
+                    ImGui.Text("Search");
+
                 ImGui.SetNextItemWidth(ws.X / 2 - 20);
                 if (_resetKeyboardFocus)
                 {
@@ -133,7 +144,7 @@ internal sealed class ConfigWindow : LImGui.LWindow
                     ImGui.Text("Type item name...");
                 }
 
-                foreach (var (id, name) in _searchResults)
+                foreach (var (id, name) in _searchResults.Take(ResultLimit))
                 {
                     bool selected = _discarding.Any(x => x.Item1 == id);
                     if (ImGui.Selectable(name, selected))
