@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace ARDiscard.GameData;
 
@@ -8,19 +9,22 @@ internal static class InternalConfiguration
     /// Not all of these *can* be discarded, but we shouldn't attempt it either.
     /// </summary>
     public static readonly IReadOnlyList<uint> BlacklistedItems = new List<uint>
-    {
-        2820, // red onion helm
+        {
+            2820, // red onion helm
 
-        16039, // ala mhigan earrings
-        24589, // aetheryte earrings
-        33648, // menphina's earrings
+            16039, // ala mhigan earrings
+            24589, // aetheryte earrings
+            33648, // menphina's earrings
 
-        21197, // UCOB token
-        23175, // UWU token
-        28633, // TEA token
-        36810, // DSR token
-        38951, // TOP token
-    }.AsReadOnly();
+            21197, // UCOB token
+            23175, // UWU token
+            28633, // TEA token
+            36810, // DSR token
+            38951, // TOP token
+        }
+        .Concat(Enumerable.Range(1, 99).Select(x => (uint)x))
+        .ToList()
+        .AsReadOnly();
 
     /// <summary>
     /// Items that are unique/untradeable, but should still be possible to discard. This is moreso because

@@ -380,6 +380,7 @@ internal sealed class ConfigWindow : LImGui.LWindow
         if (_allItems == null)
         {
             _allItems = _itemCache.AllItems
+                .Where(x => !InternalConfiguration.BlacklistedItems.Contains(x.ItemId))
                 .Where(x => InternalConfiguration.WhitelistedItems.Contains(x.ItemId) ||
                             x is { IsUnique: false, IsUntradable: false, IsIndisposable: false })
                 .Where(x => x.UiCategory != UiCategories.Currency && x.UiCategory != UiCategories.Crystals &&
