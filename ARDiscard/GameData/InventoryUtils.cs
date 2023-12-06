@@ -31,7 +31,7 @@ internal sealed class InventoryUtils
     {
         InventoryType.ArmoryEar,
         InventoryType.ArmoryNeck,
-        InventoryType.ArmoryHands,
+        InventoryType.ArmoryWrist,
         InventoryType.ArmoryRings
     };
 
