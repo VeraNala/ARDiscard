@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Dalamud.Plugin.Services;
+using Lumina.Excel;
 using Lumina.Excel.GeneratedSheets;
 
 namespace ARDiscard.GameData;
@@ -28,11 +31,44 @@ internal sealed class ItemCache
                 Level = item.LevelEquip,
                 UiCategory = item.ItemUICategory.Row,
                 UiCategoryName = item.ItemUICategory.Value!.Name.ToString(),
+                EquipSlotCategory = item.EquipSlotCategory.Row,
             };
+        }
+
+        foreach (var shopItem in dataManager.GetExcelSheet<GilShopItem>()!)
+        {
+            // exclude base ARR relics, not strictly necessary since we don't allow discarding weapons anyway
+            if (shopItem.Item.Value!.Rarity == 4)
+                continue;
+
+            // the item can be discarded already
+            if (!_items.TryGetValue(shopItem.Item.Row, out CachedItemInfo? cachedItemInfo) ||
+                cachedItemInfo.CanBeDiscarded())
+                continue;
+
+            if (shopItem.AchievementRequired.Row != 0)
+                continue;
+
+            // has a quest required to unlock from the shop
+            if (!shopItem.QuestRequired.Any(CanDiscardItemsFromQuest))
+                continue;
+
+            cachedItemInfo.CanBeBoughtFromCalamitySalvager = true;
         }
     }
 
+    private bool CanDiscardItemsFromQuest(LazyRow<Quest> quest)
+    {
+        return quest.Row > 0 &&
+               quest.Value?.JournalGenre.Value?.JournalCategory.Value?.JournalSection
+                   .Row is 0 or 1 or 6; // pre-EW MSQ, EW MSQ or Job/Class quest
+    }
+
     public IEnumerable<CachedItemInfo> AllItems => _items.Values;
+
+
+    public bool TryGetItem(uint itemId, [NotNullWhen(true)] out CachedItemInfo? item)
+        => _items.TryGetValue(itemId, out item);
 
     public CachedItemInfo? GetItem(uint itemId)
     {
@@ -71,7 +107,28 @@ internal sealed class ItemCache
         /// </summary>
         public required bool IsIndisposable { get; init; }
 
+        public bool CanBeBoughtFromCalamitySalvager { get; set; }
+
         public required uint UiCategory { get; init; }
         public required string UiCategoryName { get; init; }
+        public required uint EquipSlotCategory { get; init; }
+
+        public bool CanBeDiscarded()
+        {
+            if (InternalConfiguration.BlacklistedItems.Contains(ItemId))
+                return false;
+
+            if (UiCategory is UiCategories.Currency or UiCategories.Crystals or UiCategories.Unobtainable)
+                return false;
+
+            if (EquipSlotCategory is 1 or 2 or 13 or 14)
+                return false;
+
+            if (InternalConfiguration.WhitelistedItems.Contains(ItemId))
+                return true;
+
+            return CanBeBoughtFromCalamitySalvager ||
+                   this is { IsUnique: false, IsUntradable: false, IsIndisposable: false };
+        }
     }
 }

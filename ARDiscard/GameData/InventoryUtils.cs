@@ -35,6 +35,8 @@ internal sealed class InventoryUtils
         InventoryType.ArmoryRings
     };
 
+    private static readonly IReadOnlyList<uint> NoGearsetItems = new List<uint>();
+
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
     private readonly IPluginLog _pluginLog;
@@ -53,7 +55,7 @@ internal sealed class InventoryUtils
 
         InventoryManager* inventoryManager = InventoryManager.Instance();
         foreach (InventoryType inventoryType in DefaultInventoryTypes)
-            toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, false, null));
+            toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, NoGearsetItems));
 
         if (_configuration.Armoury.DiscardFromArmouryChest)
         {
@@ -62,14 +64,14 @@ internal sealed class InventoryUtils
             if (_configuration.Armoury.CheckLeftSideGear)
             {
                 foreach (InventoryType inventoryType in LeftSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, true,
+                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts,
                         gearsetItems));
             }
 
             if (_configuration.Armoury.CheckRightSideGear)
             {
                 foreach (InventoryType inventoryType in RightSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, true,
+                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts,
                         gearsetItems));
             }
         }
@@ -88,7 +90,7 @@ internal sealed class InventoryUtils
     }
 
     private unsafe IReadOnlyList<ItemWrapper> GetItemsToDiscard(InventoryManager* inventoryManager,
-        InventoryType inventoryType, Dictionary<uint, uint> itemCounts, bool doGearChecks,
+        InventoryType inventoryType, Dictionary<uint, uint> itemCounts,
         IReadOnlyList<uint>? gearsetItems)
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
@@ -107,18 +109,16 @@ internal sealed class InventoryUtils
                 if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
                     continue;
 
-                if (doGearChecks)
-                {
-                    if (gearsetItems == null || gearsetItems.Contains(item->ItemID))
-                        continue;
+                if (!_itemCache.TryGetItem(item->ItemID, out ItemCache.CachedItemInfo? itemInfo) || !itemInfo.CanBeDiscarded())
+                    continue; // no info, who knows what that item is
 
-                    ItemCache.CachedItemInfo? itemInfo = _itemCache.GetItem(item->ItemID);
-                    if (itemInfo == null)
-                        continue; // no info, who knows what that item is
+                // skip gear if we're unable to load gearsets or it is used in a gearset
+                if (itemInfo.EquipSlotCategory > 0 && (gearsetItems == null || gearsetItems.Contains(item->ItemID)))
+                    continue;
 
-                    if (itemInfo.ILvl >= _configuration.Armoury.MaximumGearItemLevel)
-                        continue;
-                }
+                if (itemInfo is { EquipSlotCategory: > 0, CanBeBoughtFromCalamitySalvager: false } &&
+                    itemInfo.ILvl >= _configuration.Armoury.MaximumGearItemLevel)
+                    continue;
 
                 //PluginLog.Verbose($"{i} → {item->ItemID}");
                 if (_configuration.DiscardingItems.Contains(item->ItemID))

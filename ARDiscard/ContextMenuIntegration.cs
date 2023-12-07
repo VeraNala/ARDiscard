@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Linq;
 using ARDiscard.GameData;
-using ARDiscard.GameData.Agents;
 using ARDiscard.Windows;
 using Dalamud.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace ARDiscard;
 
@@ -52,18 +49,7 @@ internal sealed class ContextMenuIntegration : IDisposable
         if (_configuration.ContextMenu.OnlyWhenConfigIsOpen && !_configWindow.IsOpen)
             return;
 
-        if (args.ParentAddonName == "ArmouryBoard")
-        {
-            var agent = AgentModule.Instance()->GetAgentByInternalId(AgentId.ArmouryBoard);
-            if (agent == null || !agent->IsAgentActive())
-                return;
-
-            // don't add it in the main/off hand weapon tabs, as we don't use these for discarding
-            var agentArmouryBoard = (AgentArmouryBoard*)agent;
-            if (agentArmouryBoard->CurrentTab is 0 or 6)
-                return;
-        }
-        else if (!(args.ParentAddonName is "Inventory" or "InventoryExpansion" or "InventoryLarge"))
+        if (!(args.ParentAddonName is "Inventory" or "InventoryExpansion" or "InventoryLarge" or "ArmouryBoard"))
             return;
 
         if (!_configWindow.CanItemBeConfigured(args.ItemId))
@@ -71,7 +57,8 @@ internal sealed class ContextMenuIntegration : IDisposable
 
         if (_configuration.DiscardingItems.Contains(args.ItemId))
             args.AddCustomItem(_removeItem);
-        else if (!InternalConfiguration.BlacklistedItems.Contains(args.ItemId))
+        else if (_itemCache.TryGetItem(args.ItemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
+                 cachedItemInfo.CanBeDiscarded())
             args.AddCustomItem(_addItem);
     }
 

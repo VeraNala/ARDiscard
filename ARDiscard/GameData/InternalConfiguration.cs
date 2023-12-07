@@ -42,6 +42,9 @@ internal static class InternalConfiguration
         9390, // Antique Breeches
         9391, // Antique Sollerets
 
+        6223, // Mended Imperial Pot Helm
+        6224, // Mended Imperial Short Robe
+
         #region Fate drops used in tribal quests
 
         7001, // Flamefang Choker (Amalj'aa)
