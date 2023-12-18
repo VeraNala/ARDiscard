@@ -59,6 +59,20 @@ internal static class InternalConfiguration
 
         #endregion
 
+        #region Fate drops that can be turned in for mount/glamour/whatever
+
+        12252, // Coeurlregina Horn
+        12253, // Proto Ultima Exoplating
+        18032, // Stygian Ash
+        20521, // Sassho-seki Fragment
+        20638, // Ixion Horn
+        27972, // Archaeotania's Horn
+        27973, // Formidable Cog
+        36633, // Chi Bolt
+        36634, // Daivadipa's Bead
+
+        #endregion
+
         #region Normal Raid trash (with no weekly lockout)
 
         // A1-A4
