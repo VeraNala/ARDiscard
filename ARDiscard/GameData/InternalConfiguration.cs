@@ -48,6 +48,13 @@ internal static class InternalConfiguration
         6223, // Mended Imperial Pot Helm
         6224, // Mended Imperial Short Robe
 
+        7060, // Durability Draught
+        14945, // Squadron Enlistment Manual
+        15772, // Contemporary Warfare: Defense
+        15773, // Contemporary Warfare: Offense
+        15774, // Contemporary Warfare: Magicks
+        20790, // High Grade Company-issue Tonic
+
         #region Fate drops used in tribal quests
 
         7001, // Flamefang Choker (Amalj'aa)
