@@ -16,6 +16,9 @@ internal static class InternalConfiguration
             24589, // aetheryte earrings
             33648, // menphina's earrings
 
+            10155, // Ceruleum Tank
+            10373, // Magitek Repair Materials
+
             21197, // UCOB token
             23175, // UWU token
             28633, // TEA token
