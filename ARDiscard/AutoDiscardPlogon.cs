@@ -86,7 +86,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         ECommonsMain.Init(_pluginInterface, this);
         _autoRetainerApi = new();
         _taskManager = new();
-        _contextMenuIntegration = new(_pluginInterface, _chatGui, itemCache, _configuration, _configWindow);
+        _contextMenuIntegration = new(_pluginInterface, _chatGui, itemCache, _configuration, _configWindow, _gameGui);
 
         _clientState.Login += _discardWindow.Login;
         _clientState.Logout += _discardWindow.Logout;
