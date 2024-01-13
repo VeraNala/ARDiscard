@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using ARDiscard.External;
 using ARDiscard.GameData;
 using ARDiscard.Windows;
 using AutoRetainerAPI;
@@ -37,6 +38,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private readonly AutoRetainerApi _autoRetainerApi;
     private readonly TaskManager _taskManager;
     private readonly ContextMenuIntegration _contextMenuIntegration;
+    private readonly AutoDiscardIpc _autoDiscardIpc;
 
     private DateTime _cancelDiscardAfter = DateTime.MaxValue;
 
@@ -87,6 +89,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _autoRetainerApi = new();
         _taskManager = new();
         _contextMenuIntegration = new(_pluginInterface, _chatGui, itemCache, _configuration, _configWindow, _gameGui);
+        _autoDiscardIpc = new(_pluginInterface, _configuration);
 
         _clientState.Login += _discardWindow.Login;
         _clientState.Logout += _discardWindow.Logout;
@@ -274,6 +277,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _clientState.Login -= _discardWindow.Login;
         _clientState.Logout -= _discardWindow.Logout;
 
+        _autoDiscardIpc.Dispose();
         _contextMenuIntegration.Dispose();
         _autoRetainerApi.Dispose();
         ECommonsMain.Dispose();
