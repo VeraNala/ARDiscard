@@ -29,6 +29,8 @@ internal static class InternalConfiguration
         .ToList()
         .AsReadOnly();
 
+    public static readonly IList<uint> UltimateWeapons = new List<uint>();
+
     /// <summary>
     /// Items that are unique/untradeable, but should still be possible to discard. This is moreso because
     /// 99% of the unique/untradeable items should NOT be selectable for discard, but these are OK.

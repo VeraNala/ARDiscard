@@ -33,6 +33,11 @@ internal sealed class ItemCache
                 UiCategoryName = item.ItemUICategory.Value!.Name.ToString(),
                 EquipSlotCategory = item.EquipSlotCategory.Row,
             };
+
+            if (item is { Rarity: 3, MateriaSlotCount: 3, RowId: < 33154 or > 33358 })
+            {
+                InternalConfiguration.UltimateWeapons.Add(item.RowId);
+            }
         }
 
         foreach (var shopItem in dataManager.GetExcelSheet<GilShopItem>()!)
@@ -115,13 +120,10 @@ internal sealed class ItemCache
 
         public bool CanBeDiscarded()
         {
-            if (InternalConfiguration.BlacklistedItems.Contains(ItemId))
+            if (InternalConfiguration.BlacklistedItems.Contains(ItemId) || InternalConfiguration.UltimateWeapons.Contains(ItemId))
                 return false;
 
             if (UiCategory is UiCategories.Currency or UiCategories.Crystals or UiCategories.Unobtainable)
-                return false;
-
-            if (EquipSlotCategory is 1 or 2 or 13 or 14)
                 return false;
 
             if (InternalConfiguration.WhitelistedItems.Contains(ItemId))

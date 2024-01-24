@@ -26,6 +26,7 @@ internal sealed class Configuration : IPluginConfiguration
     public sealed class ArmouryConfiguration
     {
         public bool DiscardFromArmouryChest { get; set; } = false;
+        public bool CheckMainHandOffHand { get; set; } = false;
         public bool CheckLeftSideGear { get; set; } = false;
         public bool CheckRightSideGear { get; set; } = false;
         public int MaximumGearItemLevel { get; set; } = 45;

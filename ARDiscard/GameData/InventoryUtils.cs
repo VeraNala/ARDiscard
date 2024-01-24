@@ -18,6 +18,12 @@ internal sealed class InventoryUtils
         InventoryType.Inventory4
     };
 
+    private static readonly InventoryType[] MainHandOffHandInventoryTypes =
+    {
+        InventoryType.ArmoryMainHand,
+        InventoryType.ArmoryOffHand,
+    };
+
     private static readonly InventoryType[] LeftSideGearInventoryTypes =
     {
         InventoryType.ArmoryHead,
@@ -60,25 +66,29 @@ internal sealed class InventoryUtils
         if (_configuration.Armoury.DiscardFromArmouryChest)
         {
             var gearsetItems = GetAllGearsetItems();
-
-            if (_configuration.Armoury.CheckLeftSideGear)
-            {
-                foreach (InventoryType inventoryType in LeftSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts,
-                        gearsetItems));
-            }
-
-            if (_configuration.Armoury.CheckRightSideGear)
-            {
-                foreach (InventoryType inventoryType in RightSideGearInventoryTypes)
-                    toDiscard.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts,
-                        gearsetItems));
-            }
+            toDiscard.AddRange(GetArmouryItemsToDiscard(_configuration.Armoury.CheckMainHandOffHand, inventoryManager,
+                MainHandOffHandInventoryTypes, itemCounts, gearsetItems));
+            toDiscard.AddRange(GetArmouryItemsToDiscard(_configuration.Armoury.CheckLeftSideGear, inventoryManager,
+                LeftSideGearInventoryTypes, itemCounts, gearsetItems));
+            toDiscard.AddRange(GetArmouryItemsToDiscard(_configuration.Armoury.CheckRightSideGear, inventoryManager,
+                RightSideGearInventoryTypes, itemCounts, gearsetItems));
         }
 
         return toDiscard
             .Where(x => itemCounts[x.InventoryItem->ItemID] < _configuration.IgnoreItemCountWhenAbove)
             .ToList();
+    }
+
+    private unsafe IEnumerable<ItemWrapper> GetArmouryItemsToDiscard(bool condition, InventoryManager* inventoryManager,
+        InventoryType[] inventoryTypes, Dictionary<uint, uint> itemCounts, List<uint>? gearsetItems)
+    {
+        if (condition)
+        {
+            foreach (InventoryType inventoryType in inventoryTypes)
+                return GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, gearsetItems);
+        }
+
+        return new List<ItemWrapper>();
     }
 
     public unsafe InventoryItem* GetNextItemToDiscard(ItemFilter? itemFilter)
@@ -106,10 +116,12 @@ internal sealed class InventoryUtils
                 else
                     itemCounts[item->ItemID] = item->Quantity;
 
-                if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
+                if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID) ||
+                    InternalConfiguration.UltimateWeapons.Contains(item->ItemID))
                     continue;
 
-                if (!_itemCache.TryGetItem(item->ItemID, out ItemCache.CachedItemInfo? itemInfo) || !itemInfo.CanBeDiscarded())
+                if (!_itemCache.TryGetItem(item->ItemID, out ItemCache.CachedItemInfo? itemInfo) ||
+                    !itemInfo.CanBeDiscarded())
                     continue; // no info, who knows what that item is
 
                 // skip gear if we're unable to load gearsets or it is used in a gearset
@@ -177,7 +189,8 @@ internal sealed class InventoryUtils
 
     public unsafe void Discard(InventoryItem* item)
     {
-        if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID))
+        if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID) ||
+            InternalConfiguration.UltimateWeapons.Contains(item->ItemID))
             throw new Exception($"Can't discard {item->ItemID}");
 
         AgentInventoryContext.Instance()->DiscardItem(item, item->Container, item->Slot, 0);

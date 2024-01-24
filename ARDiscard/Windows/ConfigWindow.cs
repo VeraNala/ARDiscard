@@ -283,6 +283,13 @@ internal sealed class ConfigWindow : LImGui.LWindow
             ImGui.BeginDisabled(!discardFromArmouryChest);
             ImGui.Indent(30);
 
+            bool mainHandOffHand = _configuration.Armoury.CheckMainHandOffHand;
+            if (ImGui.Checkbox("Discard when items are found in Main Hand/Off Hand (Weapons and Tools)", ref mainHandOffHand))
+            {
+                _configuration.Armoury.CheckMainHandOffHand = mainHandOffHand;
+                Save();
+            }
+
             bool leftSideGear = _configuration.Armoury.CheckLeftSideGear;
             if (ImGui.Checkbox("Discard when items are found in Head/Body/Hands/Legs/Feet", ref leftSideGear))
             {
