@@ -50,6 +50,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
         _pluginInterface = pluginInterface;
         _configuration = (Configuration?)_pluginInterface.GetPluginConfig() ?? new Configuration();
+        MigrateConfiguration(_configuration);
         _chatGui = chatGui;
         _clientState = clientState;
         _pluginLog = pluginLog;
@@ -97,6 +98,17 @@ public class AutoDiscardPlogon : IDalamudPlugin
         _autoRetainerApi.OnRetainerReadyToPostprocess += DoRetainerPostProcess;
         _autoRetainerApi.OnCharacterPostprocessStep += CheckCharacterPostProcess;
         _autoRetainerApi.OnCharacterReadyToPostProcess += DoCharacterPostProcess;
+    }
+
+    private void MigrateConfiguration(Configuration configuration)
+    {
+        if (configuration.Version == 1)
+        {
+            configuration.ContextMenu.Enabled = true;
+            configuration.ContextMenu.OnlyWhenConfigIsOpen = false;
+            configuration.Version = 2;
+            _pluginInterface.SavePluginConfig(configuration);
+        }
     }
 
     private void CheckRetainerPostProcess(string retainerName) =>

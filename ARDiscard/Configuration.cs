@@ -5,7 +5,7 @@ namespace ARDiscard;
 
 internal sealed class Configuration : IPluginConfiguration
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public bool RunAfterVenture { get; set; }
     public bool RunBeforeLogout { get; set; }
     public List<uint> DiscardingItems { get; set; } = new();
@@ -34,8 +34,8 @@ internal sealed class Configuration : IPluginConfiguration
 
     public sealed class ContextMenuConfiguration
     {
-        public bool Enabled { get; set; } = false;
-        public bool OnlyWhenConfigIsOpen { get; set; } = true;
+        public bool Enabled { get; set; } = true;
+        public bool OnlyWhenConfigIsOpen { get; set; } = false;
     }
 
     public sealed class PreviewConfiguration
