@@ -55,6 +55,7 @@ internal static class InternalConfiguration
         15772, // Contemporary Warfare: Defense
         15773, // Contemporary Warfare: Offense
         15774, // Contemporary Warfare: Magicks
+        4572, // Company-issue Tonic
         20790, // High Grade Company-issue Tonic
 
         #region Fate drops used in tribal quests
@@ -190,6 +191,73 @@ internal static class InternalConfiguration
         40301, // Unsung Greaves of Anabaseios
         40302, // Unsung Ring of Anabaseios
         // 40317, // Unsung Blade of Anabaseios // TODO: Add when the weekly restriction is removed
+
+        #endregion
+
+        #region Cracked crystals/clusters
+
+        15110, // V
+        16783, // V
+        18030, // VI
+        18031, // VI
+        26819, // VII
+        26820, // VII
+        26821, // VIII
+        26822, // VIII
+        36025, // IX
+        36026, // IX
+        36027, // X
+        36028, // X
+
+        #endregion
+
+        #region Unapproved Firmament materials
+
+        32005, // Switch
+        32006, // Hemp
+        32007, // Iron Ore
+        32008, // Iron Sand
+        32009, // Mahogany Log
+        32010, // Sesame
+        32011, // Cotton
+        32012, // Ore
+        32013, // Rock Salt
+        32014, // Mythrite Sand
+        32015, // Spruce Log
+        32016, // Mistletoe
+        32017, // Toad
+        32018, // Vine
+        32019, // Tea Leaves
+        32020, // Electrum Ore
+        32021, // Alumen
+        32022, // Spring Water
+        32023, // Gold Sand
+        32024, // Ragstone
+        32025, // White Cedar Log
+        32026, // Primordial Resin
+        32027, // Wheat
+        32028, // Gossamer Cotton Boll
+        32029, // Tortoise
+        32030, // Gold Ore
+        32031, // Finest Rock Salt
+        32032, // Truespring Water
+        32034, // Bluespirit Ore
+        32033, // Mineral Sand
+
+        32035, // Log
+        32036, // Raspberry
+        32037, // Caiman
+        32038, // Cocoon
+        32039, // Barbgrass
+        32040, // Cloudstone
+        32041, // Spring Water
+        32042, // Ice Stalagmite
+        32043, // Silex
+        32044, // Prismstone
+        32045, // Galewood Branch
+        32046, // Umbral Dirtleaf
+        32047, // Umbral Flarerock
+        32048, // Umbral Levinsand
 
         #endregion
     }.AsReadOnly();
