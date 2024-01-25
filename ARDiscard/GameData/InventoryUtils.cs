@@ -82,13 +82,14 @@ internal sealed class InventoryUtils
     private unsafe IEnumerable<ItemWrapper> GetArmouryItemsToDiscard(bool condition, InventoryManager* inventoryManager,
         InventoryType[] inventoryTypes, Dictionary<uint, uint> itemCounts, List<uint>? gearsetItems)
     {
+        List<ItemWrapper> items = new();
         if (condition)
         {
             foreach (InventoryType inventoryType in inventoryTypes)
-                return GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, gearsetItems);
+                items.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, gearsetItems));
         }
 
-        return new List<ItemWrapper>();
+        return items;
     }
 
     public unsafe InventoryItem* GetNextItemToDiscard(ItemFilter? itemFilter)
