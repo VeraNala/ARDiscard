@@ -15,6 +15,7 @@ internal sealed class Configuration : IPluginConfiguration
     public ContextMenuConfiguration ContextMenu { get; set; } = new();
     public PreviewConfiguration Preview { get; set; } = new();
     public uint IgnoreItemCountWhenAbove { get; set; } = 50;
+    public bool IgnoreItemWithSignature { get; set; }
 
     public sealed class CharacterInfo
     {

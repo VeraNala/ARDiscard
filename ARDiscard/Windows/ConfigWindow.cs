@@ -284,7 +284,8 @@ internal sealed class ConfigWindow : LImGui.LWindow
             ImGui.Indent(30);
 
             bool mainHandOffHand = _configuration.Armoury.CheckMainHandOffHand;
-            if (ImGui.Checkbox("Discard when items are found in Main Hand/Off Hand (Weapons and Tools)", ref mainHandOffHand))
+            if (ImGui.Checkbox("Discard when items are found in Main Hand/Off Hand (Weapons and Tools)",
+                    ref mainHandOffHand))
             {
                 _configuration.Armoury.CheckMainHandOffHand = mainHandOffHand;
                 Save();
@@ -345,6 +346,15 @@ internal sealed class ConfigWindow : LImGui.LWindow
             if (ImGui.InputInt("Ignore stacks with >= this number of items", ref ignoreItemCountWhenAbove))
             {
                 _configuration.IgnoreItemCountWhenAbove = (uint)Math.Max(2, ignoreItemCountWhenAbove);
+                Save();
+            }
+
+            bool ignoreItemWithSignature = _configuration.IgnoreItemWithSignature;
+            if (ImGui.Checkbox(
+                    "Ignore items with a 'crafted by' signature (manually crafted by yourself or someone else)",
+                    ref ignoreItemWithSignature))
+            {
+                _configuration.IgnoreItemWithSignature = ignoreItemWithSignature;
                 Save();
             }
 

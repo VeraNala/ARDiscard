@@ -133,6 +133,9 @@ internal sealed class InventoryUtils
                     itemInfo.ILvl >= _configuration.Armoury.MaximumGearItemLevel)
                     continue;
 
+                if (_configuration.IgnoreItemWithSignature && item->CrafterContentID != 0)
+                    continue;
+
                 //PluginLog.Verbose($"{i} → {item->ItemID}");
                 if (_configuration.DiscardingItems.Contains(item->ItemID))
                 {
