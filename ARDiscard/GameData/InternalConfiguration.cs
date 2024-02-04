@@ -261,4 +261,6 @@ internal static class InternalConfiguration
 
         #endregion
     }.AsReadOnly();
+
+    public static readonly IList<uint> DiscardableGearCoffers = new List<uint>();
 }

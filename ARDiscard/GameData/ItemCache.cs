@@ -60,6 +60,17 @@ internal sealed class ItemCache
 
             cachedItemInfo.CanBeBoughtFromCalamitySalvager = true;
         }
+
+        // only look at msq + regional side quests
+        foreach (var quest in dataManager.GetExcelSheet<Quest>()!.Where(x => x.JournalGenre.Value?.JournalCategory.Value?.JournalSection.Row is 0 or 1 or 3))
+        {
+            foreach (var itemId in quest.ItemReward.Where(x => x > 0))
+            {
+                var item = dataManager.GetExcelSheet<Item>()!.GetRow(itemId);
+                if (item is { Rarity: 1, ItemAction.Row: 388 } && item.RowId != 38809 && item.RowId != 29679)
+                    InternalConfiguration.DiscardableGearCoffers.Add(item.RowId);
+            }
+        }
     }
 
     private bool CanDiscardItemsFromQuest(LazyRow<Quest> quest)
@@ -120,13 +131,15 @@ internal sealed class ItemCache
 
         public bool CanBeDiscarded()
         {
-            if (InternalConfiguration.BlacklistedItems.Contains(ItemId) || InternalConfiguration.UltimateWeapons.Contains(ItemId))
+            if (InternalConfiguration.BlacklistedItems.Contains(ItemId) ||
+                InternalConfiguration.UltimateWeapons.Contains(ItemId))
                 return false;
 
             if (UiCategory is UiCategories.Currency or UiCategories.Crystals or UiCategories.Unobtainable)
                 return false;
 
-            if (InternalConfiguration.WhitelistedItems.Contains(ItemId))
+            if (InternalConfiguration.WhitelistedItems.Contains(ItemId) ||
+                InternalConfiguration.DiscardableGearCoffers.Contains(ItemId))
                 return true;
 
             return CanBeBoughtFromCalamitySalvager ||
