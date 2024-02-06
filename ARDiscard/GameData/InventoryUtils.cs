@@ -139,7 +139,7 @@ internal sealed class InventoryUtils
                 //PluginLog.Verbose($"{i} → {item->ItemID}");
                 if (_configuration.DiscardingItems.Contains(item->ItemID))
                 {
-                    _pluginLog.Information(
+                    _pluginLog.Verbose(
                         $"Found item {item->ItemID} to discard in inventory {inventoryType} in slot {i}");
                     toDiscard.Add(new ItemWrapper { InventoryItem = item });
                 }

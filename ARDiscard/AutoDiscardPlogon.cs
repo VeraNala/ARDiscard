@@ -199,7 +199,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         var addon = GetDiscardAddon();
         if (addon != null)
         {
-            _pluginLog.Information("Addon is visible, clicking 'yes'");
+            _pluginLog.Verbose("Addon is visible, clicking 'yes'");
             ((AddonSelectYesno*)addon)->YesButton->AtkComponentBase.SetEnabledState(true);
             addon->FireCallbackInt(0);
 
@@ -249,7 +249,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
             }
             else
             {
-                _pluginLog.Information(
+                _pluginLog.Verbose(
                     $"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
                 _taskManager.DelayNext(20);
                 _taskManager.Enqueue(() => ContinueAfterDiscard(type, itemFilter, inventoryType, slot));
