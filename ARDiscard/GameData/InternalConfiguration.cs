@@ -211,6 +211,14 @@ internal static class InternalConfiguration
 
         #endregion
 
+        #region Eureka Lootboxes
+
+        21831, // Sharlayan Cabinet
+        21832, // Sharlayan Wardrobe
+        22306, // Eurekan Potion
+
+        #endregion
+
         #region Unapproved Firmament materials
 
         32005, // Switch
