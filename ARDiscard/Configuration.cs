@@ -26,17 +26,17 @@ internal sealed class Configuration : IPluginConfiguration
 
     public sealed class ArmouryConfiguration
     {
-        public bool DiscardFromArmouryChest { get; set; } = false;
-        public bool CheckMainHandOffHand { get; set; } = false;
-        public bool CheckLeftSideGear { get; set; } = false;
-        public bool CheckRightSideGear { get; set; } = false;
+        public bool DiscardFromArmouryChest { get; set; }
+        public bool CheckMainHandOffHand { get; set; }
+        public bool CheckLeftSideGear { get; set; }
+        public bool CheckRightSideGear { get; set; }
         public int MaximumGearItemLevel { get; set; } = 45;
     }
 
     public sealed class ContextMenuConfiguration
     {
         public bool Enabled { get; set; } = true;
-        public bool OnlyWhenConfigIsOpen { get; set; } = false;
+        public bool OnlyWhenConfigIsOpen { get; set; }
     }
 
     public sealed class PreviewConfiguration

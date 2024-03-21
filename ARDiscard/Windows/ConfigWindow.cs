@@ -10,11 +10,11 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using ECommons;
 using ImGuiNET;
-using LLib;
+using LLib.ImGui;
 
 namespace ARDiscard.Windows;
 
-internal sealed class ConfigWindow : LImGui.LWindow
+internal sealed class ConfigWindow : LWindow
 {
     private const int ResultLimit = 200;
 
@@ -27,7 +27,7 @@ internal sealed class ConfigWindow : LImGui.LWindow
 
     private List<(uint ItemId, string Name)> _searchResults = new();
     private List<(uint ItemId, string Name)> _discarding = new();
-    private List<(uint ItemId, string Name)>? _allItems = null;
+    private List<(uint ItemId, string Name)>? _allItems;
     private bool _resetKeyboardFocus = true;
 
     public event EventHandler? DiscardNowClicked;
@@ -172,7 +172,7 @@ internal sealed class ConfigWindow : LImGui.LWindow
                 ImGui.Separator();
 
                 List<(uint, string)> toRemove = new();
-                foreach (var (id, name) in _discarding.OrderBy(x => x.Name.ToLower()))
+                foreach (var (id, name) in _discarding.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
                 {
                     if (ImGui.Selectable(name, true))
                         toRemove.Add((id, name));

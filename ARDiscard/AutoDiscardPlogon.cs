@@ -20,7 +20,7 @@ using LLib;
 namespace ARDiscard;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
-public class AutoDiscardPlogon : IDalamudPlugin
+public sealed class AutoDiscardPlogon : IDalamudPlugin
 {
     private readonly WindowSystem _windowSystem = new(nameof(AutoDiscardPlogon));
     private readonly Configuration _configuration;
@@ -36,7 +36,10 @@ public class AutoDiscardPlogon : IDalamudPlugin
     private readonly InventoryUtils _inventoryUtils;
     private readonly IconCache _iconCache;
     private readonly AutoRetainerApi _autoRetainerApi;
+
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Obsolete in ECommons")]
     private readonly TaskManager _taskManager;
+
     private readonly ContextMenuIntegration _contextMenuIntegration;
     private readonly AutoDiscardIpc _autoDiscardIpc;
 
@@ -44,8 +47,9 @@ public class AutoDiscardPlogon : IDalamudPlugin
 
     public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
         IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog,
-        IGameGui gameGui, ITextureProvider textureProvider)
+        IGameGui gameGui, ITextureProvider textureProvider, IContextMenu contextMenu)
     {
+        ArgumentNullException.ThrowIfNull(dataManager);
         ItemCache itemCache = new ItemCache(dataManager);
 
         _pluginInterface = pluginInterface;
@@ -89,7 +93,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
         ECommonsMain.Init(_pluginInterface, this);
         _autoRetainerApi = new();
         _taskManager = new();
-        _contextMenuIntegration = new(_pluginInterface, _chatGui, itemCache, _configuration, _configWindow, _gameGui);
+        _contextMenuIntegration = new(_chatGui, itemCache, _configuration, _configWindow, _gameGui, contextMenu);
         _autoDiscardIpc = new(_pluginInterface, _configuration);
 
         _clientState.Login += _discardWindow.Login;
@@ -315,7 +319,7 @@ public class AutoDiscardPlogon : IDalamudPlugin
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
                     var text = MemoryHelper.ReadSeString(&textNode->NodeText).ExtractText();
                     _pluginLog.Information($"YesNo prompt: {text}");
-                    if (text.StartsWith("Discard"))
+                    if (text.StartsWith("Discard", StringComparison.Ordinal))
                     {
                         return addon;
                     }

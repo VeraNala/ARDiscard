@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -79,7 +80,7 @@ internal sealed class InventoryUtils
             .ToList();
     }
 
-    private unsafe IEnumerable<ItemWrapper> GetArmouryItemsToDiscard(bool condition, InventoryManager* inventoryManager,
+    private unsafe ReadOnlyCollection<ItemWrapper> GetArmouryItemsToDiscard(bool condition, InventoryManager* inventoryManager,
         InventoryType[] inventoryTypes, Dictionary<uint, uint> itemCounts, List<uint>? gearsetItems)
     {
         List<ItemWrapper> items = new();
@@ -89,7 +90,7 @@ internal sealed class InventoryUtils
                 items.AddRange(GetItemsToDiscard(inventoryManager, inventoryType, itemCounts, gearsetItems));
         }
 
-        return items;
+        return items.AsReadOnly();
     }
 
     public unsafe InventoryItem* GetNextItemToDiscard(ItemFilter? itemFilter)
@@ -100,7 +101,7 @@ internal sealed class InventoryUtils
         return toDiscard != null ? toDiscard.InventoryItem : null;
     }
 
-    private unsafe IReadOnlyList<ItemWrapper> GetItemsToDiscard(InventoryManager* inventoryManager,
+    private unsafe ReadOnlyCollection<ItemWrapper> GetItemsToDiscard(InventoryManager* inventoryManager,
         InventoryType inventoryType, Dictionary<uint, uint> itemCounts,
         IReadOnlyList<uint>? gearsetItems)
     {
@@ -150,7 +151,7 @@ internal sealed class InventoryUtils
             }
         }
 
-        return toDiscard;
+        return toDiscard.AsReadOnly();
     }
 
     private unsafe List<uint>? GetAllGearsetItems()
@@ -195,7 +196,7 @@ internal sealed class InventoryUtils
     {
         if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID) ||
             InternalConfiguration.UltimateWeapons.Contains(item->ItemID))
-            throw new Exception($"Can't discard {item->ItemID}");
+            throw new ArgumentException($"Can't discard {item->ItemID}", nameof(item));
 
         AgentInventoryContext.Instance()->DiscardItem(item, item->Container, item->Slot, 0);
     }

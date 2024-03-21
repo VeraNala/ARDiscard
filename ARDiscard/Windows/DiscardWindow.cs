@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
@@ -9,10 +10,11 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
 using ImGuiNET;
 using LLib;
+using LLib.ImGui;
 
 namespace ARDiscard.Windows;
 
-internal sealed class DiscardWindow : LImGui.LWindow
+internal sealed class DiscardWindow : LWindow
 {
     private readonly InventoryUtils _inventoryUtils;
     private readonly ItemCache _itemCache;
@@ -47,7 +49,7 @@ internal sealed class DiscardWindow : LImGui.LWindow
         };
     }
 
-    public bool Locked { get; set; } = false;
+    public bool Locked { get; set; }
 
     public override void Draw()
     {
@@ -98,7 +100,7 @@ internal sealed class DiscardWindow : LImGui.LWindow
         ImGui.BeginDisabled(Locked ||
                             !_clientState.IsLoggedIn ||
                             !(_condition[ConditionFlag.NormalConditions] || _condition[ConditionFlag.Mounted]) ||
-                            _displayedItems.Count(x => x.Selected) == 0 ||
+                            !_displayedItems.Any(x => x.Selected) ||
                             DiscardAllClicked == null);
         if (ImGui.Button("Discard all selected items"))
         {
@@ -162,7 +164,7 @@ internal sealed class DiscardWindow : LImGui.LWindow
                 UiCategoryName = x.Key.ItemInfo!.UiCategoryName,
                 Selected = !notSelected.Contains(x.Key.ItemId),
             })
-            .OrderBy(x => x.Name.ToLower())
+            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 

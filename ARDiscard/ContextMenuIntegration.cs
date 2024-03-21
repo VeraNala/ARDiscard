@@ -1,10 +1,10 @@
 ﻿using System;
 using ARDiscard.GameData;
 using ARDiscard.Windows;
-using Dalamud.ContextMenu;
+using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 
 namespace ARDiscard;
@@ -16,76 +16,96 @@ internal sealed class ContextMenuIntegration : IDisposable
     private readonly Configuration _configuration;
     private readonly ConfigWindow _configWindow;
     private readonly IGameGui _gameGui;
-    private readonly SeString _addItemPayload;
-    private readonly SeString _removeItemPayload;
-    private readonly InventoryContextMenuItem _addInventoryItem;
-    private readonly InventoryContextMenuItem _removeInventoryItem;
-    private readonly DalamudContextMenu _dalamudContextMenu;
+    private readonly IContextMenu _contextMenu;
+    private readonly MenuItem _addInventoryItem;
+    private readonly MenuItem _removeInventoryItem;
 
-    public ContextMenuIntegration(DalamudPluginInterface pluginInterface, IChatGui chatGui, ItemCache itemCache,
-        Configuration configuration, ConfigWindow configWindow, IGameGui gameGui)
+    public ContextMenuIntegration(IChatGui chatGui, ItemCache itemCache, Configuration configuration,
+        ConfigWindow configWindow, IGameGui gameGui, IContextMenu contextMenu)
     {
         _chatGui = chatGui;
         _itemCache = itemCache;
         _configuration = configuration;
         _configWindow = configWindow;
         _gameGui = gameGui;
-        _addItemPayload =
-            new SeString(new UIForegroundPayload(52))
-                .Append($"\ue05f ")
-                .Append(new UIForegroundPayload(0)).Append("Add to Auto Discard List");
-        _removeItemPayload = new SeString(new UIForegroundPayload(52))
-            .Append($"\ue05f ")
-            .Append(new UIForegroundPayload(0)).Append("Remove from Auto Discard List");
-        _addInventoryItem = new InventoryContextMenuItem(_addItemPayload, AddToDiscardList);
-        _removeInventoryItem = new InventoryContextMenuItem(_removeItemPayload, RemoveFromDiscardList);
+        _contextMenu = contextMenu;
+        _addInventoryItem = new MenuItem
+        {
+            Prefix = (SeIconChar)57439,
+            PrefixColor = 52,
+            Name = "Add to Auto Discard List",
+            OnClicked = AddToDiscardList,
+        };
+        _removeInventoryItem = new MenuItem
+        {
+            Prefix = (SeIconChar)57439,
+            PrefixColor = 52,
+            Name = "Remove from Auto Discard List",
+            OnClicked = RemoveFromDiscardList,
+        };
 
-        _dalamudContextMenu = new(pluginInterface);
-        _dalamudContextMenu.OnOpenInventoryContextMenu += OpenInventoryContextMenu;
-        _dalamudContextMenu.OnOpenGameObjectContextMenu += OpenGameObjectContextMenu;
+        _contextMenu.OnMenuOpened += MenuOpened;
     }
 
-    private void OpenInventoryContextMenu(InventoryContextMenuOpenArgs args)
+    private void MenuOpened(MenuOpenedArgs args)
     {
         if (!IsEnabled())
             return;
 
-        if (args.ParentAddonName is not ("Inventory" or "InventoryExpansion" or "InventoryLarge" or "ArmouryBoard"))
-            return;
+        if (args.Target is MenuTargetInventory targetInventory)
+        {
+            if (args.AddonName is not ("Inventory" or "InventoryExpansion" or "InventoryLarge" or "ArmouryBoard") ||
+                targetInventory.TargetItem == null)
+                return;
 
-        if (!_configWindow.CanItemBeConfigured(args.ItemId))
-            return;
+            var item = targetInventory.TargetItem.Value;
+            if (!_configWindow.CanItemBeConfigured(item.ItemId))
+                return;
 
-        if (_configuration.DiscardingItems.Contains(args.ItemId))
-            args.AddCustomItem(_removeInventoryItem);
-        else if (_itemCache.TryGetItem(args.ItemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
-                 cachedItemInfo.CanBeDiscarded())
-            args.AddCustomItem(_addInventoryItem);
+            if (_configuration.DiscardingItems.Contains(item.ItemId))
+                args.AddMenuItem(_removeInventoryItem);
+            else if (_itemCache.TryGetItem(item.ItemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
+                     cachedItemInfo.CanBeDiscarded())
+                args.AddMenuItem(_addInventoryItem);
+        }
+        else
+        {
+            if (args.AddonName is not "ChatLog")
+                return;
+
+            uint itemId = (uint)_gameGui.HoveredItem;
+            if (itemId > 1_000_000)
+                itemId -= 1_000_000;
+
+            if (itemId > 500_000)
+                itemId -= 500_000;
+
+            if (_configuration.DiscardingItems.Contains(itemId))
+            {
+                args.AddMenuItem(new MenuItem
+                {
+                    Prefix = _removeInventoryItem.Prefix,
+                    PrefixColor = _removeInventoryItem.PrefixColor,
+                    Name = _removeInventoryItem.Name,
+                    OnClicked = _ => RemoveFromDiscardList(itemId),
+                });
+            }
+            else if (_itemCache.TryGetItem(itemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
+                     cachedItemInfo.CanBeDiscarded())
+            {
+                args.AddMenuItem(new MenuItem
+                {
+                    Prefix = _addInventoryItem.Prefix,
+                    PrefixColor = _addInventoryItem.PrefixColor,
+                    Name = _addInventoryItem.Name,
+                    OnClicked = _ => AddToDiscardList(itemId),
+                });
+            }
+        }
     }
 
-    private void OpenGameObjectContextMenu(GameObjectContextMenuOpenArgs args)
-    {
-        if (!IsEnabled())
-            return;
-
-        if (args.ParentAddonName is not "ChatLog")
-            return;
-
-        uint itemId = (uint)_gameGui.HoveredItem;
-        if (itemId > 1_000_000)
-            itemId -= 1_000_000;
-
-        if (itemId > 500_000)
-            itemId -= 500_000;
-
-        if (_configuration.DiscardingItems.Contains(itemId))
-            args.AddCustomItem(new GameObjectContextMenuItem(_removeItemPayload, _ => RemoveFromDiscardList(itemId)));
-        else if (_itemCache.TryGetItem(itemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
-                 cachedItemInfo.CanBeDiscarded())
-            args.AddCustomItem(new GameObjectContextMenuItem(_addItemPayload, _ => AddToDiscardList(itemId)));
-    }
-
-    private void AddToDiscardList(InventoryContextMenuItemSelectedArgs args) => AddToDiscardList(args.ItemId);
+    private void AddToDiscardList(MenuItemClickedArgs args) =>
+        AddToDiscardList(((MenuTargetInventory)args.Target).TargetItem!.Value.ItemId);
 
     private void AddToDiscardList(uint itemId)
     {
@@ -104,7 +124,8 @@ internal sealed class ContextMenuIntegration : IDisposable
         }
     }
 
-    private void RemoveFromDiscardList(InventoryContextMenuItemSelectedArgs args) => RemoveFromDiscardList(args.ItemId);
+    private void RemoveFromDiscardList(MenuItemClickedArgs args) =>
+        RemoveFromDiscardList(((MenuTargetInventory)args.Target).TargetItem!.Value.ItemId);
 
     private void RemoveFromDiscardList(uint itemId)
     {
@@ -136,8 +157,6 @@ internal sealed class ContextMenuIntegration : IDisposable
 
     public void Dispose()
     {
-        _dalamudContextMenu.OnOpenGameObjectContextMenu -= OpenGameObjectContextMenu;
-        _dalamudContextMenu.OnOpenInventoryContextMenu -= OpenInventoryContextMenu;
-        _dalamudContextMenu.Dispose();
+        _contextMenu.OnMenuOpened -= MenuOpened;
     }
 }
