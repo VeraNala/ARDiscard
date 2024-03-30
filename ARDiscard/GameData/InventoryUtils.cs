@@ -12,46 +12,48 @@ namespace ARDiscard.GameData;
 internal sealed class InventoryUtils
 {
     private static readonly InventoryType[] DefaultInventoryTypes =
-    {
+    [
         InventoryType.Inventory1,
         InventoryType.Inventory2,
         InventoryType.Inventory3,
         InventoryType.Inventory4
-    };
+    ];
 
     private static readonly InventoryType[] MainHandOffHandInventoryTypes =
-    {
+    [
         InventoryType.ArmoryMainHand,
-        InventoryType.ArmoryOffHand,
-    };
+        InventoryType.ArmoryOffHand
+    ];
 
     private static readonly InventoryType[] LeftSideGearInventoryTypes =
-    {
+    [
         InventoryType.ArmoryHead,
         InventoryType.ArmoryBody,
         InventoryType.ArmoryHands,
         InventoryType.ArmoryLegs,
         InventoryType.ArmoryFeets
-    };
+    ];
 
     private static readonly InventoryType[] RightSideGearInventoryTypes =
-    {
+    [
         InventoryType.ArmoryEar,
         InventoryType.ArmoryNeck,
         InventoryType.ArmoryWrist,
         InventoryType.ArmoryRings
-    };
+    ];
 
     private static readonly IReadOnlyList<uint> NoGearsetItems = new List<uint>();
 
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
+    private readonly IListManager _listManager;
     private readonly IPluginLog _pluginLog;
 
-    public InventoryUtils(Configuration configuration, ItemCache itemCache, IPluginLog pluginLog)
+    public InventoryUtils(Configuration configuration, ItemCache itemCache, IListManager listManager, IPluginLog pluginLog)
     {
         _configuration = configuration;
         _itemCache = itemCache;
+        _listManager = listManager;
         _pluginLog = pluginLog;
     }
 
@@ -118,12 +120,11 @@ internal sealed class InventoryUtils
                 else
                     itemCounts[item->ItemID] = item->Quantity;
 
-                if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID) ||
-                    InternalConfiguration.UltimateWeapons.Contains(item->ItemID))
+                if (_listManager.IsBlacklisted(item->ItemID))
                     continue;
 
                 if (!_itemCache.TryGetItem(item->ItemID, out ItemCache.CachedItemInfo? itemInfo) ||
-                    !itemInfo.CanBeDiscarded())
+                    !itemInfo.CanBeDiscarded(_listManager))
                     continue; // no info, who knows what that item is
 
                 // skip gear if we're unable to load gearsets or it is used in a gearset
@@ -194,8 +195,7 @@ internal sealed class InventoryUtils
 
     public unsafe void Discard(InventoryItem* item)
     {
-        if (InternalConfiguration.BlacklistedItems.Contains(item->ItemID) ||
-            InternalConfiguration.UltimateWeapons.Contains(item->ItemID))
+        if (_listManager.IsBlacklisted(item->ItemID))
             throw new ArgumentException($"Can't discard {item->ItemID}", nameof(item));
 
         AgentInventoryContext.Instance()->DiscardItem(item, item->Container, item->Slot, 0);

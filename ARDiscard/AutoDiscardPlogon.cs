@@ -50,7 +50,6 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         IGameGui gameGui, ITextureProvider textureProvider, IContextMenu contextMenu)
     {
         ArgumentNullException.ThrowIfNull(dataManager);
-        ItemCache itemCache = new ItemCache(dataManager);
 
         _pluginInterface = pluginInterface;
         _configuration = (Configuration?)_pluginInterface.GetPluginConfig() ?? new Configuration();
@@ -72,7 +71,12 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         {
             HelpMessage = "Show what will be discarded with your current configuration",
         });
-        _inventoryUtils = new InventoryUtils(_configuration, itemCache, _pluginLog);
+
+        ListManager listManager = new ListManager(_configuration);
+        ItemCache itemCache = new ItemCache(dataManager, listManager);
+        _inventoryUtils = new InventoryUtils(_configuration, itemCache, listManager, _pluginLog);
+        listManager.FinishInitialization();
+
         _iconCache = new IconCache(textureProvider);
 
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
@@ -81,7 +85,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _discardWindow = new(_inventoryUtils, itemCache, _iconCache, clientState, condition, _configuration);
         _windowSystem.AddWindow(_discardWindow);
 
-        _configWindow = new(_pluginInterface, _configuration, itemCache, clientState, condition);
+        _configWindow = new(_pluginInterface, _configuration, itemCache, listManager, clientState, condition);
         _windowSystem.AddWindow(_configWindow);
 
         _configWindow.DiscardNowClicked += (_, _) => OpenDiscardWindow(string.Empty, string.Empty);
@@ -93,7 +97,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         ECommonsMain.Init(_pluginInterface, this);
         _autoRetainerApi = new();
         _taskManager = new();
-        _contextMenuIntegration = new(_chatGui, itemCache, _configuration, _configWindow, _gameGui, contextMenu);
+        _contextMenuIntegration = new(_chatGui, itemCache, _configuration, listManager, _configWindow, _gameGui, contextMenu);
         _autoDiscardIpc = new(_pluginInterface, _configuration);
 
         _clientState.Login += _discardWindow.Login;

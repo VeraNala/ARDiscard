@@ -8,7 +8,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using ECommons;
 using ImGuiNET;
 using LLib.ImGui;
 
@@ -16,30 +15,28 @@ namespace ARDiscard.Windows;
 
 internal sealed class ConfigWindow : LWindow
 {
-    private const int ResultLimit = 200;
-
     private readonly DalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
+    private readonly IListManager _listManager;
     private readonly IClientState _clientState;
     private readonly ICondition _condition;
-    private string _itemName = string.Empty;
+    private readonly DiscardListTab _discardListTab;
+    private readonly ExcludedListTab _excludedListTab;
 
-    private List<(uint ItemId, string Name)> _searchResults = new();
-    private List<(uint ItemId, string Name)> _discarding = new();
     private List<(uint ItemId, string Name)>? _allItems;
-    private bool _resetKeyboardFocus = true;
 
     public event EventHandler? DiscardNowClicked;
     public event EventHandler? ConfigSaved;
 
     public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, ItemCache itemCache,
-        IClientState clientState, ICondition condition)
+        IListManager listManager, IClientState clientState, ICondition condition)
         : base("Auto Discard###AutoDiscardConfig")
     {
         _pluginInterface = pluginInterface;
         _configuration = configuration;
         _itemCache = itemCache;
+        _listManager = listManager;
         _clientState = clientState;
         _condition = condition;
 
@@ -52,8 +49,11 @@ internal sealed class ConfigWindow : LWindow
             MaximumSize = new Vector2(9999, 9999),
         };
 
-        _discarding.AddRange(_configuration.DiscardingItems
-            .Select(x => (x, itemCache.GetItemName(x))).ToList());
+        _excludedListTab = new ExcludedListTab(this, itemCache, _configuration.BlacklistedItems, listManager);
+        _discardListTab = new DiscardListTab(this, itemCache, _configuration.DiscardingItems)
+        {
+            ExcludedTab = _excludedListTab,
+        };
     }
 
     public override void Draw()
@@ -84,6 +84,7 @@ internal sealed class ConfigWindow : LWindow
         {
             DrawDiscardList();
             DrawExcludedCharacters();
+            DrawExcludedItems();
             DrawExperimentalSettings();
 
             ImGui.EndTabBar();
@@ -94,100 +95,7 @@ internal sealed class ConfigWindow : LWindow
     {
         if (ImGui.BeginTabItem("Items to Discard"))
         {
-            var ws = ImGui.GetWindowSize();
-            if (ImGui.BeginChild("Left", new Vector2(Math.Max(10, ws.X / 2), -1), true))
-            {
-                if (!string.IsNullOrEmpty(_itemName))
-                {
-                    if (_searchResults.Count > ResultLimit)
-                        ImGui.Text($"Search ({ResultLimit:N0} out of {_searchResults.Count:N0} matches)");
-                    else
-                        ImGui.Text($"Search ({_searchResults.Count:N0} matches)");
-                }
-                else
-                    ImGui.Text("Search");
-
-                ImGui.SetNextItemWidth(ws.X / 2 - 20);
-                if (_resetKeyboardFocus)
-                {
-                    ImGui.SetKeyboardFocusHere();
-                    _resetKeyboardFocus = false;
-                }
-
-                string previousName = _itemName;
-                if (ImGui.InputText("", ref _itemName, 256, ImGuiInputTextFlags.EnterReturnsTrue))
-                {
-                    _resetKeyboardFocus = true;
-                    if (_searchResults.Count > 0)
-                    {
-                        var itemToAdd = _searchResults.FirstOrDefault();
-                        if (_discarding.All(x => x.ItemId != itemToAdd.ItemId))
-                        {
-                            _discarding.Add(itemToAdd);
-                        }
-                        else
-                        {
-                            _discarding.Remove(itemToAdd);
-                        }
-
-                        Save();
-                    }
-                }
-
-                if (previousName != _itemName)
-                    UpdateResults();
-
-                ImGui.Separator();
-
-                if (string.IsNullOrEmpty(_itemName))
-                {
-                    ImGui.Text("Type item name...");
-                }
-
-                foreach (var (id, name) in _searchResults.Take(ResultLimit))
-                {
-                    bool selected = _discarding.Any(x => x.Item1 == id);
-                    if (ImGui.Selectable(name, selected))
-                    {
-                        if (!selected)
-                        {
-                            _discarding.Add((id, name));
-                        }
-                        else
-                        {
-                            _discarding.Remove((id, name));
-                        }
-
-                        Save();
-                    }
-                }
-            }
-
-            ImGui.EndChild();
-            ImGui.SameLine();
-
-            if (ImGui.BeginChild("Right", new Vector2(-1, -1), true, ImGuiWindowFlags.NoSavedSettings))
-            {
-                ImGui.Text("Items that will be automatically discarded");
-                ImGui.Separator();
-
-                List<(uint, string)> toRemove = new();
-                foreach (var (id, name) in _discarding.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-                {
-                    if (ImGui.Selectable(name, true))
-                        toRemove.Add((id, name));
-                }
-
-                if (toRemove.Count > 0)
-                {
-                    foreach (var tr in toRemove)
-                        _discarding.Remove(tr);
-
-                    Save();
-                }
-            }
-
-            ImGui.EndChild();
+            _discardListTab.Draw();
             ImGui.EndTabItem();
         }
     }
@@ -265,6 +173,19 @@ internal sealed class ConfigWindow : LWindow
 
             ImGui.Unindent(30);
 
+            ImGui.EndTabItem();
+        }
+    }
+
+    private void DrawExcludedItems()
+    {
+        if (ImGui.BeginTabItem("Excluded Items"))
+        {
+            ImGui.Text(
+                "Items configured here will never be discarded, and have priority over the 'Items to Discard' tab.");
+            ImGui.Text("Some items (such as Ultimate weapons) can not be un-blacklisted.");
+
+            _excludedListTab.Draw();
             ImGui.EndTabItem();
         }
     }
@@ -378,26 +299,12 @@ internal sealed class ConfigWindow : LWindow
         }
     }
 
-    private void UpdateResults()
-    {
-        if (string.IsNullOrEmpty(_itemName))
-            _searchResults = new();
-        else
-        {
-            _searchResults = EnsureAllItemsLoaded().Where(x =>
-                    x.Name.Contains(_itemName, StringComparison.CurrentCultureIgnoreCase)
-                    || (uint.TryParse(_itemName, out uint itemId) && x.ItemId == itemId))
-                .OrderBy(x => _itemName.EqualsIgnoreCase(x.Name) ? string.Empty : x.Name)
-                .ToList();
-        }
-    }
-
-    private List<(uint ItemId, string Name)> EnsureAllItemsLoaded()
+    internal List<(uint ItemId, string Name)> EnsureAllItemsLoaded()
     {
         if (_allItems == null)
         {
             _allItems = _itemCache.AllItems
-                .Where(x => x.CanBeDiscarded())
+                .Where(x => x.CanBeDiscarded(_listManager, false))
                 .Select(x => (x.ItemId, x.Name.ToString()))
                 .ToList();
         }
@@ -405,37 +312,18 @@ internal sealed class ConfigWindow : LWindow
         return _allItems;
     }
 
-    private void Save()
+    internal void Save()
     {
-        _configuration.DiscardingItems = _discarding.Select(x => x.ItemId).ToList();
+        _configuration.DiscardingItems = _discardListTab.ToSavedItems().ToList();
+        _configuration.BlacklistedItems = _excludedListTab.ToSavedItems().ToList();
         _pluginInterface.SavePluginConfig(_configuration);
 
         ConfigSaved?.Invoke(this, EventArgs.Empty);
     }
 
-    internal bool AddToDiscardList(uint itemId)
-    {
-        var item = EnsureAllItemsLoaded().SingleOrDefault(x => x.ItemId == itemId);
-        if (item.ItemId != 0)
-        {
-            _discarding.Add(item);
-            Save();
-            return true;
-        }
+    internal bool AddToDiscardList(uint itemId) => _discardListTab.AddToDiscardList(itemId);
 
-        return false;
-    }
-
-    internal bool RemoveFromDiscardList(uint itemId)
-    {
-        if (_discarding.RemoveAll(x => x.ItemId == itemId) > 0)
-        {
-            Save();
-            return true;
-        }
-
-        return false;
-    }
+    internal bool RemoveFromDiscardList(uint itemId) => _discardListTab.RemoveFromDiscardList(itemId);
 
     public bool CanItemBeConfigured(uint itemId)
     {

@@ -9,6 +9,7 @@ internal sealed class Configuration : IPluginConfiguration
     public bool RunAfterVenture { get; set; }
     public bool RunBeforeLogout { get; set; }
     public List<uint> DiscardingItems { get; set; } = new();
+    public List<uint> BlacklistedItems { get; set; } = new();
     public List<CharacterInfo> ExcludedCharacters { get; set; } = new();
 
     public ArmouryConfiguration Armoury { get; set; } = new();

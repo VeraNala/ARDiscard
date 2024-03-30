@@ -1,20 +1,22 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace ARDiscard.GameData;
 
-internal static class InternalConfiguration
+internal sealed class ListManager : IListManager
 {
     /// <summary>
     /// Not all of these *can* be discarded, but we shouldn't attempt it either.
     /// </summary>
-    public static readonly IReadOnlyList<uint> BlacklistedItems = new List<uint>
+    private ISet<uint> _blacklistedItems = new List<uint>
         {
             2820, // red onion helm
 
             16039, // ala mhigan earrings
             24589, // aetheryte earrings
             33648, // menphina's earrings
+            41081, // azeyma's earrings
 
             10155, // Ceruleum Tank
             10373, // Magitek Repair Materials
@@ -26,16 +28,13 @@ internal static class InternalConfiguration
             38951, // TOP token
         }
         .Concat(Enumerable.Range(1, 99).Select(x => (uint)x))
-        .ToList()
-        .AsReadOnly();
-
-    public static readonly IList<uint> UltimateWeapons = new List<uint>();
+        .ToHashSet();
 
     /// <summary>
     /// Items that are unique/untradeable, but should still be possible to discard. This is moreso because
     /// 99% of the unique/untradeable items should NOT be selectable for discard, but these are OK.
     /// </summary>
-    public static readonly IReadOnlyList<uint> WhitelistedItems = new List<uint>
+    private ISet<uint> _whitelistedItems = new HashSet<uint>()
     {
         2962, // Onion Doublet
         3279, // Onion Gaskins
@@ -268,7 +267,37 @@ internal static class InternalConfiguration
         32048, // Umbral Levinsand
 
         #endregion
-    }.AsReadOnly();
+    };
 
-    public static readonly IList<uint> DiscardableGearCoffers = new List<uint>();
+    private readonly Configuration _configuration;
+
+    public ListManager(Configuration configuration)
+    {
+        _configuration = configuration;
+    }
+
+    public void FinishInitialization()
+    {
+        _blacklistedItems = _blacklistedItems.ToImmutableHashSet();
+        _whitelistedItems = _whitelistedItems.ToImmutableHashSet();
+    }
+
+    public bool IsBlacklisted(uint itemId, bool checkConfiguration = true)
+    {
+        if (_blacklistedItems.Contains(itemId))
+            return true;
+
+        if (checkConfiguration && _configuration.BlacklistedItems.Contains(itemId))
+            return true;
+
+        return false;
+    }
+
+    public IReadOnlyList<uint> GetInternalBlacklist() => _blacklistedItems.ToList().AsReadOnly();
+
+    public void AddToInternalBlacklist(uint itemId) => _blacklistedItems.Add(itemId);
+
+    public bool IsWhitelisted(uint itemId) => _whitelistedItems.Contains(itemId);
+
+    public void AddToInternalWhitelist(uint itemId) => _whitelistedItems.Add(itemId);
 }

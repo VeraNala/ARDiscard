@@ -11,7 +11,7 @@ internal sealed class ItemCache
 {
     private readonly Dictionary<uint, CachedItemInfo> _items = new();
 
-    public ItemCache(IDataManager dataManager)
+    public ItemCache(IDataManager dataManager, ListManager listManager)
     {
         foreach (var item in dataManager.GetExcelSheet<Item>()!)
         {
@@ -35,9 +35,10 @@ internal sealed class ItemCache
             };
 
             if (item is { Rarity: 3, MateriaSlotCount: 3, RowId: < 33154 or > 33358 })
-            {
-                InternalConfiguration.UltimateWeapons.Add(item.RowId);
-            }
+                listManager.AddToInternalBlacklist(item.RowId);
+
+            if (item is { ItemSearchCategory.Row: 79, ItemUICategory.Row: >= 101 and <= 104 })
+                listManager.AddToInternalBlacklist(item.RowId);
         }
 
         foreach (var shopItem in dataManager.GetExcelSheet<GilShopItem>()!)
@@ -48,7 +49,7 @@ internal sealed class ItemCache
 
             // the item can be discarded already
             if (!_items.TryGetValue(shopItem.Item.Row, out CachedItemInfo? cachedItemInfo) ||
-                cachedItemInfo.CanBeDiscarded())
+                cachedItemInfo.CanBeDiscarded(listManager))
                 continue;
 
             if (shopItem.AchievementRequired.Row != 0)
@@ -68,7 +69,7 @@ internal sealed class ItemCache
             {
                 var item = dataManager.GetExcelSheet<Item>()!.GetRow(itemId);
                 if (item is { Rarity: 1, ItemAction.Row: 388 } && item.RowId != 38809 && item.RowId != 29679)
-                    InternalConfiguration.DiscardableGearCoffers.Add(item.RowId);
+                    listManager.AddToInternalWhitelist(item.RowId);
             }
         }
     }
@@ -129,17 +130,15 @@ internal sealed class ItemCache
         public required string UiCategoryName { get; init; }
         public required uint EquipSlotCategory { get; init; }
 
-        public bool CanBeDiscarded()
+        public bool CanBeDiscarded(IListManager listManager, bool checkConfiguration = true)
         {
-            if (InternalConfiguration.BlacklistedItems.Contains(ItemId) ||
-                InternalConfiguration.UltimateWeapons.Contains(ItemId))
+            if (listManager.IsBlacklisted(ItemId, checkConfiguration))
                 return false;
 
             if (UiCategory is UiCategories.Currency or UiCategories.Crystals or UiCategories.Unobtainable)
                 return false;
 
-            if (InternalConfiguration.WhitelistedItems.Contains(ItemId) ||
-                InternalConfiguration.DiscardableGearCoffers.Contains(ItemId))
+            if (listManager.IsWhitelisted(ItemId))
                 return true;
 
             return CanBeBoughtFromCalamitySalvager ||

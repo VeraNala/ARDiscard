@@ -14,6 +14,7 @@ internal sealed class ContextMenuIntegration : IDisposable
     private readonly IChatGui _chatGui;
     private readonly ItemCache _itemCache;
     private readonly Configuration _configuration;
+    private readonly IListManager _listManager;
     private readonly ConfigWindow _configWindow;
     private readonly IGameGui _gameGui;
     private readonly IContextMenu _contextMenu;
@@ -21,11 +22,12 @@ internal sealed class ContextMenuIntegration : IDisposable
     private readonly MenuItem _removeInventoryItem;
 
     public ContextMenuIntegration(IChatGui chatGui, ItemCache itemCache, Configuration configuration,
-        ConfigWindow configWindow, IGameGui gameGui, IContextMenu contextMenu)
+        IListManager listManager, ConfigWindow configWindow, IGameGui gameGui, IContextMenu contextMenu)
     {
         _chatGui = chatGui;
         _itemCache = itemCache;
         _configuration = configuration;
+        _listManager = listManager;
         _configWindow = configWindow;
         _gameGui = gameGui;
         _contextMenu = contextMenu;
@@ -65,7 +67,7 @@ internal sealed class ContextMenuIntegration : IDisposable
             if (_configuration.DiscardingItems.Contains(item.ItemId))
                 args.AddMenuItem(_removeInventoryItem);
             else if (_itemCache.TryGetItem(item.ItemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
-                     cachedItemInfo.CanBeDiscarded())
+                     cachedItemInfo.CanBeDiscarded(_listManager))
                 args.AddMenuItem(_addInventoryItem);
         }
         else
@@ -91,7 +93,7 @@ internal sealed class ContextMenuIntegration : IDisposable
                 });
             }
             else if (_itemCache.TryGetItem(itemId, out ItemCache.CachedItemInfo? cachedItemInfo) &&
-                     cachedItemInfo.CanBeDiscarded())
+                     cachedItemInfo.CanBeDiscarded(_listManager))
             {
                 args.AddMenuItem(new MenuItem
                 {
