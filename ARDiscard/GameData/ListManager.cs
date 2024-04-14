@@ -189,7 +189,7 @@ internal sealed class ListManager : IListManager
         40300, // Unsung Chausses of Anabaseios
         40301, // Unsung Greaves of Anabaseios
         40302, // Unsung Ring of Anabaseios
-        // 40317, // Unsung Blade of Anabaseios // TODO: Add when the weekly restriction is removed
+        40317, // Unsung Blade of Anabaseios
 
         #endregion
 
