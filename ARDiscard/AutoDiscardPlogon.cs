@@ -92,7 +92,10 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _configWindow.ConfigSaved += (_, _) => _discardWindow.RefreshInventory(true);
         _discardWindow.OpenConfigurationClicked += (_, _) => OpenConfigUi();
         _discardWindow.DiscardAllClicked += (_, filter) =>
-            _taskManager!.Enqueue(() => DiscardNextItem(PostProcessType.ManuallyStarted, filter));
+        {
+            _taskManager!.Abort();
+            _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.ManuallyStarted, filter));
+        };
 
         ECommonsMain.Init(_pluginInterface, this);
         _autoRetainerApi = new();
@@ -151,11 +154,13 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
 
     private void DoRetainerPostProcess(string retainerName)
     {
+        _taskManager.Abort();
         _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.Retainer, ItemFilter.None));
     }
 
     private void DoCharacterPostProcess()
     {
+        _taskManager.Abort();
         _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.Character, ItemFilter.None));
     }
 
@@ -168,6 +173,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
 
     private void DiscardAll(string command, string arguments)
     {
+        _taskManager.Abort();
         _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.ManuallyStarted, ItemFilter.None));
     }
 
@@ -265,7 +271,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         }
         else
         {
-            _pluginLog.Information($"ContinueAfterDiscard: Discovered different item to discard");
+            _pluginLog.Information("ContinueAfterDiscard: Discovered different item to discard");
             _taskManager.EnqueueImmediate(() => DiscardNextItem(type, itemFilter));
         }
     }
