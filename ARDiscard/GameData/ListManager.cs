@@ -267,6 +267,25 @@ internal sealed class ListManager : IListManager
         32048, // Umbral Levinsand
 
         #endregion
+
+        #region Irregular Tomestones (after the event is over)
+
+        24909, // Philosophy
+        26536, // Mythology
+        28648, // Soldiery
+        30272, // Law
+        31339, // Esoterics
+        33329, // Pageantry
+        33330, // Lore
+        35834, // Scripture
+        36658, // Verity
+        38211, // Creation
+        39365, // Mendacity
+        39919, // Tenfold Pageantry
+        41305, // Genesis I
+        41306, // Genesis II
+
+        #endregion
     };
 
     private readonly Configuration _configuration;
