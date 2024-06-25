@@ -169,18 +169,18 @@ internal sealed class InventoryUtils
             {
                 var gearsetItems = new[]
                 {
-                    gearset->MainHand,
-                    gearset->OffHand,
-                    gearset->Head,
-                    gearset->Body,
-                    gearset->Hands,
-                    gearset->Legs,
-                    gearset->Feet,
-                    gearset->Ears,
-                    gearset->Neck,
-                    gearset->Wrists,
-                    gearset->RingRight,
-                    gearset->RingLeft,
+                    gearset->ItemsSpan[0],
+                    gearset->ItemsSpan[1],
+                    gearset->ItemsSpan[2],
+                    gearset->ItemsSpan[3],
+                    gearset->ItemsSpan[4],
+                    gearset->ItemsSpan[6],
+                    gearset->ItemsSpan[7],
+                    gearset->ItemsSpan[8],
+                    gearset->ItemsSpan[9],
+                    gearset->ItemsSpan[10],
+                    gearset->ItemsSpan[11],
+                    gearset->ItemsSpan[12],
                 };
                 foreach (var gearsetItem in gearsetItems)
                 {
