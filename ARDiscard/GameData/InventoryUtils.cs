@@ -78,7 +78,7 @@ internal sealed class InventoryUtils
         }
 
         return toDiscard
-            .Where(x => itemCounts[x.InventoryItem->ItemID] < _configuration.IgnoreItemCountWhenAbove)
+            .Where(x => itemCounts[x.InventoryItem->ItemId] < _configuration.IgnoreItemCountWhenAbove)
             .ToList();
     }
 
@@ -99,7 +99,7 @@ internal sealed class InventoryUtils
     {
         List<ItemWrapper> allItemsToDiscard = GetAllItemsToDiscard();
         ItemWrapper? toDiscard = allItemsToDiscard.FirstOrDefault(x =>
-            itemFilter == null || itemFilter.ItemIds.Contains(x.InventoryItem->ItemID));
+            itemFilter == null || itemFilter.ItemIds.Contains(x.InventoryItem->ItemId));
         return toDiscard != null ? toDiscard.InventoryItem : null;
     }
 
@@ -113,36 +113,36 @@ internal sealed class InventoryUtils
         for (int i = 0; i < container->Size; ++i)
         {
             var item = container->GetInventorySlot(i);
-            if (item != null && item->ItemID != 0)
+            if (item != null && item->ItemId != 0)
             {
-                if (itemCounts.TryGetValue(item->ItemID, out uint itemCount))
-                    itemCounts[item->ItemID] = itemCount + item->Quantity;
+                if (itemCounts.TryGetValue(item->ItemId, out uint itemCount))
+                    itemCounts[item->ItemId] = itemCount + item->Quantity;
                 else
-                    itemCounts[item->ItemID] = item->Quantity;
+                    itemCounts[item->ItemId] = item->Quantity;
 
-                if (_listManager.IsBlacklisted(item->ItemID))
+                if (_listManager.IsBlacklisted(item->ItemId))
                     continue;
 
-                if (!_itemCache.TryGetItem(item->ItemID, out ItemCache.CachedItemInfo? itemInfo) ||
+                if (!_itemCache.TryGetItem(item->ItemId, out ItemCache.CachedItemInfo? itemInfo) ||
                     !itemInfo.CanBeDiscarded(_listManager))
                     continue; // no info, who knows what that item is
 
                 // skip gear if we're unable to load gearsets or it is used in a gearset
-                if (itemInfo.EquipSlotCategory > 0 && (gearsetItems == null || gearsetItems.Contains(item->ItemID)))
+                if (itemInfo.EquipSlotCategory > 0 && (gearsetItems == null || gearsetItems.Contains(item->ItemId)))
                     continue;
 
                 if (itemInfo is { EquipSlotCategory: > 0, CanBeBoughtFromCalamitySalvager: false } &&
                     itemInfo.ILvl >= _configuration.Armoury.MaximumGearItemLevel)
                     continue;
 
-                if (_configuration.IgnoreItemWithSignature && item->CrafterContentID != 0)
+                if (_configuration.IgnoreItemWithSignature && item->CrafterContentId != 0)
                     continue;
 
                 //PluginLog.Verbose($"{i} → {item->ItemID}");
-                if (_configuration.DiscardingItems.Contains(item->ItemID))
+                if (_configuration.DiscardingItems.Contains(item->ItemId))
                 {
                     _pluginLog.Verbose(
-                        $"Found item {item->ItemID} to discard in inventory {inventoryType} in slot {i}");
+                        $"Found item {item->ItemId} to discard in inventory {inventoryType} in slot {i}");
                     toDiscard.Add(new ItemWrapper { InventoryItem = item });
                 }
             }
@@ -169,23 +169,23 @@ internal sealed class InventoryUtils
             {
                 var gearsetItems = new[]
                 {
-                    gearset->ItemsSpan[0],
-                    gearset->ItemsSpan[1],
-                    gearset->ItemsSpan[2],
-                    gearset->ItemsSpan[3],
-                    gearset->ItemsSpan[4],
-                    gearset->ItemsSpan[6],
-                    gearset->ItemsSpan[7],
-                    gearset->ItemsSpan[8],
-                    gearset->ItemsSpan[9],
-                    gearset->ItemsSpan[10],
-                    gearset->ItemsSpan[11],
-                    gearset->ItemsSpan[12],
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.MainHand),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.OffHand),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Head),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Body),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Hands),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Legs),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Feet),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Ears),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Neck),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.Wrists),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.RingLeft),
+                    gearset->GetItem(RaptureGearsetModule.GearsetItemIndex.RingRight),
                 };
                 foreach (var gearsetItem in gearsetItems)
                 {
-                    if (gearsetItem.ItemID != 0)
-                        allGearsetItems.Add(gearsetItem.ItemID);
+                    if (gearsetItem.ItemId != 0)
+                        allGearsetItems.Add(gearsetItem.ItemId);
                 }
             }
         }
@@ -195,8 +195,8 @@ internal sealed class InventoryUtils
 
     public unsafe void Discard(InventoryItem* item)
     {
-        if (_listManager.IsBlacklisted(item->ItemID))
-            throw new ArgumentException($"Can't discard {item->ItemID}", nameof(item));
+        if (_listManager.IsBlacklisted(item->ItemId))
+            throw new ArgumentException($"Can't discard {item->ItemId}", nameof(item));
 
         AgentInventoryContext.Instance()->DiscardItem(item, item->Container, item->Slot, 0);
     }

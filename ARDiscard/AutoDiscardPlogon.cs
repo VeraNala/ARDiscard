@@ -11,7 +11,7 @@ using Dalamud.Memory;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using ECommons;
-using ECommons.Automation;
+using ECommons.Automation.NeoTaskManager;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -27,7 +27,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
     private readonly ConfigWindow _configWindow;
     private readonly DiscardWindow _discardWindow;
 
-    private readonly DalamudPluginInterface _pluginInterface;
+    private readonly IDalamudPluginInterface _pluginInterface;
     private readonly IChatGui _chatGui;
     private readonly IClientState _clientState;
     private readonly IPluginLog _pluginLog;
@@ -45,7 +45,8 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
 
     private DateTime _cancelDiscardAfter = DateTime.MaxValue;
 
-    public AutoDiscardPlogon(DalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
+    [SuppressMessage("Maintainability", "CA1506")]
+    public AutoDiscardPlogon(IDalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
         IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog,
         IGameGui gameGui, ITextureProvider textureProvider, IContextMenu contextMenu)
     {
@@ -80,6 +81,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _iconCache = new IconCache(textureProvider);
 
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
+        _pluginInterface.UiBuilder.OpenMainUi += OpenDiscardUi;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
 
         _discardWindow = new(_inventoryUtils, itemCache, _iconCache, clientState, condition, _configuration);
@@ -93,8 +95,8 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _discardWindow.OpenConfigurationClicked += (_, _) => OpenConfigUi();
         _discardWindow.DiscardAllClicked += (_, filter) =>
         {
-            _taskManager!.Abort();
-            _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.ManuallyStarted, filter));
+            _taskManager?.Abort();
+            _taskManager?.Enqueue(() => DiscardNextItem(PostProcessType.ManuallyStarted, filter));
         };
 
         ECommonsMain.Init(_pluginInterface, this);
@@ -177,7 +179,9 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _taskManager.Enqueue(() => DiscardNextItem(PostProcessType.ManuallyStarted, ItemFilter.None));
     }
 
-    private void OpenDiscardWindow(string command, string arguments)
+    private void OpenDiscardWindow(string command, string arguments) => OpenDiscardUi();
+
+    private void OpenDiscardUi()
     {
         _discardWindow.IsOpen = !_discardWindow.IsOpen;
     }
@@ -198,11 +202,11 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
             var (inventoryType, slot) = (nextItem->Container, nextItem->Slot);
 
             _pluginLog.Information(
-                $"Discarding itemId {nextItem->ItemID} in slot {nextItem->Slot} of container {nextItem->Container}.");
+                $"Discarding itemId {nextItem->ItemId} in slot {nextItem->Slot} of container {nextItem->Container}.");
             _inventoryUtils.Discard(nextItem);
             _cancelDiscardAfter = DateTime.Now.AddSeconds(15);
 
-            _taskManager.DelayNext(20);
+            _taskManager.EnqueueDelay(20);
             _taskManager.Enqueue(() => ConfirmDiscardItem(type, itemFilter, inventoryType, slot));
         }
     }
@@ -217,7 +221,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
             ((AddonSelectYesno*)addon)->YesButton->AtkComponentBase.SetEnabledState(true);
             addon->FireCallbackInt(0);
 
-            _taskManager.DelayNext(20);
+            _taskManager.EnqueueDelay(20);
             _taskManager.Enqueue(() => ContinueAfterDiscard(type, itemFilter, inventoryType, slot));
         }
         else
@@ -232,14 +236,14 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
             {
                 _pluginLog.Information(
                     $"Addon is not (yet) visible, still trying to discard item in slot {slot} in inventory {inventoryType}");
-                _taskManager.DelayNext(100);
+                _taskManager.EnqueueDelay(100);
                 _taskManager.Enqueue(() => ConfirmDiscardItem(type, itemFilter, inventoryType, slot));
             }
             else
             {
                 _pluginLog.Information(
                     $"Addon is not (yet) visible, but slot or inventory type changed, retrying from start");
-                _taskManager.DelayNext(100);
+                _taskManager.EnqueueDelay(100);
                 _taskManager.Enqueue(() => DiscardNextItem(type, itemFilter));
             }
         }
@@ -265,14 +269,14 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
             {
                 _pluginLog.Verbose(
                     $"ContinueAfterDiscard: Waiting for server response until {_cancelDiscardAfter}");
-                _taskManager.DelayNext(20);
+                _taskManager.EnqueueDelay(20);
                 _taskManager.Enqueue(() => ContinueAfterDiscard(type, itemFilter, inventoryType, slot));
             }
         }
         else
         {
             _pluginLog.Information("ContinueAfterDiscard: Discovered different item to discard");
-            _taskManager.EnqueueImmediate(() => DiscardNextItem(type, itemFilter));
+            _taskManager.Enqueue(() => DiscardNextItem(type, itemFilter));
         }
     }
 
@@ -310,6 +314,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _iconCache.Dispose();
 
         _pluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
+        _pluginInterface.UiBuilder.OpenMainUi -= OpenDiscardUi;
         _pluginInterface.UiBuilder.Draw -= _windowSystem.Draw;
         _commandManager.RemoveHandler("/discard");
         _commandManager.RemoveHandler("/discardall");

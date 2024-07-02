@@ -15,7 +15,7 @@ namespace ARDiscard.Windows;
 
 internal sealed class ConfigWindow : LWindow
 {
-    private readonly DalamudPluginInterface _pluginInterface;
+    private readonly IDalamudPluginInterface _pluginInterface;
     private readonly Configuration _configuration;
     private readonly ItemCache _itemCache;
     private readonly IListManager _listManager;
@@ -29,7 +29,7 @@ internal sealed class ConfigWindow : LWindow
     public event EventHandler? DiscardNowClicked;
     public event EventHandler? ConfigSaved;
 
-    public ConfigWindow(DalamudPluginInterface pluginInterface, Configuration configuration, ItemCache itemCache,
+    public ConfigWindow(IDalamudPluginInterface pluginInterface, Configuration configuration, ItemCache itemCache,
         IListManager listManager, IClientState clientState, ICondition condition)
         : base("Auto Discard###AutoDiscardConfig")
     {
@@ -65,7 +65,10 @@ internal sealed class ConfigWindow : LWindow
             Save();
         }
 
-        ImGui.SameLine(ImGui.GetWindowWidth() - 115 * ImGuiHelpers.GlobalScale);
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X +
+                       ImGui.GetStyle().WindowPadding.X -
+                       ImGui.CalcTextSize("Preview Discards").X -
+                       ImGui.GetStyle().ItemSpacing.X);
         ImGui.BeginDisabled(!_clientState.IsLoggedIn ||
                             !(_condition[ConditionFlag.NormalConditions] || _condition[ConditionFlag.Mounted]) ||
                             DiscardNowClicked == null);

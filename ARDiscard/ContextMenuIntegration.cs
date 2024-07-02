@@ -49,7 +49,7 @@ internal sealed class ContextMenuIntegration : IDisposable
         _contextMenu.OnMenuOpened += MenuOpened;
     }
 
-    private void MenuOpened(MenuOpenedArgs args)
+    private void MenuOpened(IMenuOpenedArgs args)
     {
         if (!IsEnabled())
             return;
@@ -106,7 +106,7 @@ internal sealed class ContextMenuIntegration : IDisposable
         }
     }
 
-    private void AddToDiscardList(MenuItemClickedArgs args) =>
+    private void AddToDiscardList(IMenuItemClickedArgs args) =>
         AddToDiscardList(((MenuTargetInventory)args.Target).TargetItem!.Value.ItemId);
 
     private void AddToDiscardList(uint itemId)
@@ -126,7 +126,7 @@ internal sealed class ContextMenuIntegration : IDisposable
         }
     }
 
-    private void RemoveFromDiscardList(MenuItemClickedArgs args) =>
+    private void RemoveFromDiscardList(IMenuItemClickedArgs args) =>
         RemoveFromDiscardList(((MenuTargetInventory)args.Target).TargetItem!.Value.ItemId);
 
     private void RemoveFromDiscardList(uint itemId)

@@ -12,7 +12,7 @@ internal sealed class AutoDiscardIpc
     private readonly Configuration _configuration;
     private readonly ICallGateProvider<IReadOnlySet<uint>> _getItemsToDiscard;
 
-    public AutoDiscardIpc(DalamudPluginInterface pluginInterface, Configuration configuration)
+    public AutoDiscardIpc(IDalamudPluginInterface pluginInterface, Configuration configuration)
     {
         _configuration = configuration;
 

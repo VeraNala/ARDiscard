@@ -5,6 +5,8 @@ using System.Linq;
 using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
@@ -96,7 +98,11 @@ internal sealed class DiscardWindow : LWindow
         if (ImGui.Button("Open Configuration"))
             OpenConfigurationClicked!.Invoke(this, EventArgs.Empty);
         ImGui.EndDisabled();
-        ImGui.SameLine(ImGui.GetWindowWidth() - 160 * ImGuiHelpers.GlobalScale);
+
+        ImGui.SameLine(ImGui.GetContentRegionAvail().X +
+                       ImGui.GetStyle().WindowPadding.X -
+                       ImGui.CalcTextSize("Discard all selected items").X -
+                       ImGui.GetStyle().ItemSpacing.X);
         ImGui.BeginDisabled(Locked ||
                             !_clientState.IsLoggedIn ||
                             !(_condition[ConditionFlag.NormalConditions] || _condition[ConditionFlag.Mounted]) ||
@@ -117,12 +123,14 @@ internal sealed class DiscardWindow : LWindow
     {
         if (_configuration.Preview.ShowIcons)
         {
-            IDalamudTextureWrap? icon = _iconCache.GetIcon(displayedItem.IconId);
-            if (icon != null)
+            ISharedImmediateTexture icon = _iconCache.GetIcon(displayedItem.IconId);
+            if (icon.TryGetWrap(out IDalamudTextureWrap? wrap, out _))
             {
-                ImGui.Image(icon.ImGuiHandle, new Vector2(23, 23));
+                ImGui.Image(wrap.ImGuiHandle, new Vector2(23, 23));
                 ImGui.SameLine();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 3);
+
+                wrap.Dispose();
             }
         }
 
@@ -150,8 +158,8 @@ internal sealed class DiscardWindow : LWindow
         _displayedItems = _inventoryUtils.GetAllItemsToDiscard()
             .GroupBy(x => new
             {
-                ItemId = x.InventoryItem->ItemID,
-                ItemInfo = _itemCache.GetItem(x.InventoryItem->ItemID),
+                ItemId = x.InventoryItem->ItemId,
+                ItemInfo = _itemCache.GetItem(x.InventoryItem->ItemId),
             })
             .Where(x => x.Key.ItemInfo != null)
             .Select(x => new SelectableItem
