@@ -35,6 +35,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
     private readonly ICommandManager _commandManager;
     private readonly InventoryUtils _inventoryUtils;
     private readonly IconCache _iconCache;
+    private readonly GameStrings _gameStrings;
     private readonly AutoRetainerApi _autoRetainerApi;
 
     [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "Obsolete in ECommons")]
@@ -79,6 +80,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         listManager.FinishInitialization();
 
         _iconCache = new IconCache(textureProvider);
+        _gameStrings = new GameStrings(dataManager, pluginLog);
 
         _pluginInterface.UiBuilder.Draw += _windowSystem.Draw;
         _pluginInterface.UiBuilder.OpenMainUi += OpenDiscardUi;
@@ -334,7 +336,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
                     var text = MemoryHelper.ReadSeString(&textNode->NodeText).ExtractText();
                     _pluginLog.Information($"YesNo prompt: {text}");
-                    if (text.StartsWith("Discard", StringComparison.Ordinal))
+                    if (_gameStrings.DiscardItem.IsMatch(text) || _gameStrings.DiscardCollectable.IsMatch(text))
                     {
                         return addon;
                     }
