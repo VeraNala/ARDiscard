@@ -26,8 +26,6 @@ internal abstract class ItemListTab
     protected abstract string RightSideLabel { get; }
     protected List<(uint ItemId, string Name)> SelectedItems { get; } = new();
 
-    public abstract IEnumerable<uint> ToSavedItems();
-
     public void Draw()
     {
         var ws = ImGui.GetWindowSize();
@@ -142,8 +140,6 @@ internal abstract class ItemListTab
     }
 
     protected virtual (string Name, bool Enabled) AsLeftSideDisplay(uint itemId, string name) => (name, true);
-
-    protected virtual (string Name, bool Enabled) AsRightSideDisplay(uint itemId, string name) => (name, true);
 
     protected void Save() => _parent.Save();
 

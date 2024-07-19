@@ -20,7 +20,7 @@ internal sealed class ExcludedListTab : ItemListTab
 
     protected override string RightSideLabel => "Items that will never be discarded";
 
-    public override IEnumerable<uint> ToSavedItems()
+    public IEnumerable<uint> ToSavedItems()
     {
         return SelectedItems
             .Select(x => x.ItemId)

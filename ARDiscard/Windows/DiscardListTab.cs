@@ -14,7 +14,7 @@ namespace ARDiscard.Windows
         protected override string RightSideLabel => "Items that will be automatically discarded";
         internal required ExcludedListTab ExcludedTab { private get; init; }
 
-        public override IEnumerable<uint> ToSavedItems()
+        public IEnumerable<uint> ToSavedItems()
         {
             SelectedItems.RemoveAll(x => ExcludedTab.IsBlacklistedInConfiguration(x.ItemId));
             return SelectedItems.Select(x => x.ItemId);

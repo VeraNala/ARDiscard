@@ -72,7 +72,13 @@ internal sealed class ItemCache
                     listManager.AddToInternalWhitelist(item.RowId);
             }
         }
+
+        MaxDungeonItemLevel = _items.Values.Where(x => x.Rarity == 2)
+            .Select(x => (int)x.ILvl)
+            .Max();
     }
+
+    public int MaxDungeonItemLevel { get; }
 
     private bool CanDiscardItemsFromQuest(LazyRow<Quest> quest)
     {

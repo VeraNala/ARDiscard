@@ -234,7 +234,8 @@ internal sealed class ConfigWindow : LWindow
             if (ImGui.InputInt("Ignore items >= this ilvl (Armoury Chest only)",
                     ref maximumItemLevel))
             {
-                _configuration.Armoury.MaximumGearItemLevel = Math.Max(0, Math.Min(625, maximumItemLevel));
+                _configuration.Armoury.MaximumGearItemLevel =
+                    Math.Max(0, Math.Min(_itemCache.MaxDungeonItemLevel, maximumItemLevel));
                 Save();
             }
 
