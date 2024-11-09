@@ -62,6 +62,14 @@ internal sealed class ItemCache
             cachedItemInfo.CanBeBoughtFromCalamitySalvager = true;
         }
 
+        foreach (var collectableItem in dataManager.GetExcelSheet<CollectablesShopItem>()!)
+        {
+            if (collectableItem.RowId == 0)
+                continue;
+
+            listManager.AddToInternalWhitelist(collectableItem.Item.Row);
+        }
+
         // only look at msq + regional side quests
         foreach (var quest in dataManager.GetExcelSheet<Quest>()!.Where(x => x.JournalGenre.Value?.JournalCategory.Value?.JournalSection.Row is 0 or 1 or 3))
         {
