@@ -123,14 +123,12 @@ internal sealed class DiscardWindow : LWindow
     {
         if (_configuration.Preview.ShowIcons)
         {
-            ISharedImmediateTexture icon = _iconCache.GetIcon(displayedItem.IconId);
-            if (icon.TryGetWrap(out IDalamudTextureWrap? wrap, out _))
+            using IDalamudTextureWrap? icon = _iconCache.GetIcon(displayedItem.IconId);
+            if (icon != null)
             {
-                ImGui.Image(wrap.ImGuiHandle, new Vector2(23, 23));
+                ImGui.Image(icon.ImGuiHandle, new Vector2(23, 23));
                 ImGui.SameLine();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 3);
-
-                wrap.Dispose();
             }
         }
 
