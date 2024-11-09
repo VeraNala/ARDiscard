@@ -11,8 +11,6 @@ internal sealed class ListManager : IListManager
     /// </summary>
     private ISet<uint> _blacklistedItems = new List<uint>
         {
-            2820, // red onion helm
-
             16039, // ala mhigan earrings
             24589, // aetheryte earrings
             33648, // menphina's earrings

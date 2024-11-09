@@ -54,7 +54,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         ArgumentNullException.ThrowIfNull(dataManager);
 
         _pluginInterface = pluginInterface;
-        _configuration = (Configuration?)_pluginInterface.GetPluginConfig() ?? new Configuration();
+        _configuration = (Configuration?)_pluginInterface.GetPluginConfig() ?? Configuration.CreateNew();
         MigrateConfiguration(_configuration);
         _chatGui = chatGui;
         _clientState = clientState;
@@ -122,6 +122,14 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
             configuration.ContextMenu.Enabled = true;
             configuration.ContextMenu.OnlyWhenConfigIsOpen = false;
             configuration.Version = 2;
+            _pluginInterface.SavePluginConfig(configuration);
+        }
+
+        if (configuration.Version == 2)
+        {
+            if (!configuration.BlacklistedItems.Contains(2820))
+                configuration.BlacklistedItems.Add(2820);
+            configuration.Version = 3;
             _pluginInterface.SavePluginConfig(configuration);
         }
     }

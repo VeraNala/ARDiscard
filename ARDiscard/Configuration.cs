@@ -5,7 +5,7 @@ namespace ARDiscard;
 
 internal sealed class Configuration : IPluginConfiguration
 {
-    public int Version { get; set; } = 2;
+    public int Version { get; set; } = 3;
     public bool RunAfterVenture { get; set; }
     public bool RunBeforeLogout { get; set; }
     public List<uint> DiscardingItems { get; set; } = new();
@@ -44,5 +44,13 @@ internal sealed class Configuration : IPluginConfiguration
     {
         public bool GroupByCategory { get; set; } = true;
         public bool ShowIcons { get; set; } = true;
+    }
+
+    public static Configuration CreateNew()
+    {
+        return new Configuration
+        {
+            BlacklistedItems = [2820]
+        };
     }
 }
