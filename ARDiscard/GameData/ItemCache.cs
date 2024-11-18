@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace ARDiscard.GameData;
 
@@ -13,7 +13,7 @@ internal sealed class ItemCache
 
     public ItemCache(IDataManager dataManager, ListManager listManager)
     {
-        foreach (var item in dataManager.GetExcelSheet<Item>()!)
+        foreach (var item in dataManager.GetExcelSheet<Item>())
         {
             if (item.RowId == 0)
                 continue;
@@ -23,36 +23,36 @@ internal sealed class ItemCache
                 ItemId = item.RowId,
                 Name = item.Name.ToString(),
                 IconId = item.Icon,
-                ILvl = item.LevelItem.Row,
+                ILvl = item.LevelItem.RowId,
                 Rarity = item.Rarity,
                 IsUnique = item.IsUnique,
                 IsUntradable = item.IsUntradable,
                 IsIndisposable = item.IsIndisposable,
                 Level = item.LevelEquip,
-                UiCategory = item.ItemUICategory.Row,
-                UiCategoryName = item.ItemUICategory.Value!.Name.ToString(),
-                EquipSlotCategory = item.EquipSlotCategory.Row,
+                UiCategory = item.ItemUICategory.RowId,
+                UiCategoryName = item.ItemUICategory.Value.Name.ToString(),
+                EquipSlotCategory = item.EquipSlotCategory.RowId,
             };
 
             if (item is { Rarity: 3, MateriaSlotCount: 3, RowId: < 33154 or > 33358 })
                 listManager.AddToInternalBlacklist(item.RowId);
 
-            if (item is { ItemSearchCategory.Row: 79, ItemUICategory.Row: >= 101 and <= 104 })
+            if (item is { ItemSearchCategory.RowId: 79, ItemUICategory.RowId: >= 101 and <= 104 })
                 listManager.AddToInternalBlacklist(item.RowId);
         }
 
-        foreach (var shopItem in dataManager.GetExcelSheet<GilShopItem>()!)
+        foreach (var shopItem in dataManager.GetSubrowExcelSheet<GilShopItem>().SelectMany(x => x))
         {
             // exclude base ARR relics, not strictly necessary since we don't allow discarding weapons anyway
-            if (shopItem.Item.Value!.Rarity == 4)
+            if (shopItem.Item.Value.Rarity == 4)
                 continue;
 
             // the item can be discarded already
-            if (!_items.TryGetValue(shopItem.Item.Row, out CachedItemInfo? cachedItemInfo) ||
+            if (!_items.TryGetValue(shopItem.Item.RowId, out CachedItemInfo? cachedItemInfo) ||
                 cachedItemInfo.CanBeDiscarded(listManager))
                 continue;
 
-            if (shopItem.AchievementRequired.Row != 0)
+            if (shopItem.AchievementRequired.RowId != 0)
                 continue;
 
             // has a quest required to unlock from the shop
@@ -62,22 +62,23 @@ internal sealed class ItemCache
             cachedItemInfo.CanBeBoughtFromCalamitySalvager = true;
         }
 
-        foreach (var collectableItem in dataManager.GetExcelSheet<CollectablesShopItem>()!)
+        foreach (var collectableItem in dataManager.GetSubrowExcelSheet<CollectablesShopItem>().SelectMany(x => x))
         {
             if (collectableItem.RowId == 0)
                 continue;
 
-            listManager.AddToInternalWhitelist(collectableItem.Item.Row);
+            listManager.AddToInternalWhitelist(collectableItem.Item.RowId);
         }
 
         // only look at msq + regional side quests
-        foreach (var quest in dataManager.GetExcelSheet<Quest>()!.Where(x => x.JournalGenre.Value?.JournalCategory.Value?.JournalSection.Row is 0 or 1 or 3))
+        foreach (var quest in dataManager.GetExcelSheet<Quest>().Where(x =>
+                     x.JournalGenre.ValueNullable?.JournalCategory.ValueNullable?.JournalSection.RowId is 0 or 1 or 3))
         {
-            foreach (var itemId in quest.ItemReward.Where(x => x > 0))
+            foreach (var itemRef in quest.Reward.Where(x => x.RowId > 0))
             {
-                var item = dataManager.GetExcelSheet<Item>()!.GetRow(itemId);
-                if (item is { Rarity: 1, ItemAction.Row: 388 } && item.RowId != 38809 && item.RowId != 29679)
-                    listManager.AddToInternalWhitelist(item.RowId);
+                var item = itemRef.GetValueOrDefault<Item>();
+                if (item is { Rarity: 1, ItemAction.RowId: 388 } && item.Value.RowId != 38809 && item.Value.RowId != 29679)
+                    listManager.AddToInternalWhitelist(item.Value.RowId);
             }
         }
 
@@ -88,11 +89,11 @@ internal sealed class ItemCache
 
     public int MaxDungeonItemLevel { get; }
 
-    private bool CanDiscardItemsFromQuest(LazyRow<Quest> quest)
+    private bool CanDiscardItemsFromQuest(RowRef<Quest> quest)
     {
-        return quest.Row > 0 &&
-               quest.Value?.JournalGenre.Value?.JournalCategory.Value?.JournalSection
-                   .Row is 0 or 1 or 6; // pre-EW MSQ, EW MSQ or Job/Class quest
+        return quest is { RowId: > 0, IsValid: true } &&
+               quest.ValueNullable?.JournalGenre.ValueNullable?.JournalCategory.ValueNullable?.JournalSection
+                   .RowId is 0 or 1 or 6; // pre-EW MSQ, EW MSQ or Job/Class quest
     }
 
     public IEnumerable<CachedItemInfo> AllItems => _items.Values;

@@ -60,7 +60,7 @@ internal sealed class InventoryUtils
     public unsafe List<ItemWrapper> GetAllItemsToDiscard()
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
-        Dictionary<uint, uint> itemCounts = new();
+        Dictionary<uint, int> itemCounts = new();
 
         InventoryManager* inventoryManager = InventoryManager.Instance();
         foreach (InventoryType inventoryType in DefaultInventoryTypes)
@@ -83,7 +83,7 @@ internal sealed class InventoryUtils
     }
 
     private unsafe ReadOnlyCollection<ItemWrapper> GetArmouryItemsToDiscard(bool condition, InventoryManager* inventoryManager,
-        InventoryType[] inventoryTypes, Dictionary<uint, uint> itemCounts, List<uint>? gearsetItems)
+        InventoryType[] inventoryTypes, Dictionary<uint, int> itemCounts, List<uint>? gearsetItems)
     {
         List<ItemWrapper> items = new();
         if (condition)
@@ -104,7 +104,7 @@ internal sealed class InventoryUtils
     }
 
     private unsafe ReadOnlyCollection<ItemWrapper> GetItemsToDiscard(InventoryManager* inventoryManager,
-        InventoryType inventoryType, Dictionary<uint, uint> itemCounts,
+        InventoryType inventoryType, Dictionary<uint, int> itemCounts,
         IReadOnlyList<uint>? gearsetItems)
     {
         List<ItemWrapper> toDiscard = new List<ItemWrapper>();
@@ -115,7 +115,7 @@ internal sealed class InventoryUtils
             var item = container->GetInventorySlot(i);
             if (item != null && item->ItemId != 0)
             {
-                if (itemCounts.TryGetValue(item->ItemId, out uint itemCount))
+                if (itemCounts.TryGetValue(item->ItemId, out int itemCount))
                     itemCounts[item->ItemId] = itemCount + item->Quantity;
                 else
                     itemCounts[item->ItemId] = item->Quantity;

@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using Dalamud.Plugin.Services;
 using LLib;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace ARDiscard.GameData;
 

@@ -195,5 +195,5 @@ internal sealed class DiscardWindow : LWindow
 
     public void Login() => RefreshInventory(false);
 
-    public void Logout() => _displayedItems.Clear();
+    public void Logout(int type, int code) => _displayedItems.Clear();
 }

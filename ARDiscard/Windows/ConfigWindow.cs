@@ -109,7 +109,7 @@ internal sealed class ConfigWindow : LWindow
         {
             if (_clientState is { IsLoggedIn: true, LocalContentId: > 0 })
             {
-                string worldName = _clientState.LocalPlayer?.HomeWorld.GameData?.Name ?? "??";
+                string worldName = _clientState.LocalPlayer?.HomeWorld.ValueNullable?.Name .ToString() ?? "??";
                 ImGui.TextWrapped(
                     $"Current Character: {_clientState.LocalPlayer?.Name} @ {worldName} ({_clientState.LocalContentId:X})");
                 ImGui.Indent(30);
