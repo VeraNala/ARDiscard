@@ -80,6 +80,8 @@ internal sealed class ListManager : IListManager
         27973, // Formidable Cog
         36633, // Chi Bolt
         36634, // Daivadipa's Bead
+        41803, // Ttokrrone Scale
+        41804, // Mica Magicog
 
         #endregion
 
@@ -178,7 +180,7 @@ internal sealed class ListManager : IListManager
         38378, // Unsung Chausses of Abyssos
         38379, // Unsung Greaves of Abyssos
         38380, // Unsung Ring of Abyssos
-        38385, // Unsung Blade of Abyssos // TODO: Remove in 7.0 as it will no longer drop
+        38385, // Unsung Blade of Abyssos
 
         // P9-P12
         40297, // Unsung Helm of Anabaseios
@@ -188,6 +190,15 @@ internal sealed class ListManager : IListManager
         40301, // Unsung Greaves of Anabaseios
         40302, // Unsung Ring of Anabaseios
         40317, // Unsung Blade of Anabaseios
+
+        // M1-M4
+        43541, // Light-heavy Holohelm
+        43542, // Light-heavy Holoarmor
+        43543, // Light-heavy Hologauntlets
+        43544, // Light-heavy Holobchausses
+        43545, // Light-heavy Hologreaves
+        43546, // Light-heavy Holoearring
+        43547, // Light-heavy Holoblade
 
         #endregion
 
@@ -282,6 +293,7 @@ internal sealed class ListManager : IListManager
         39919, // Tenfold Pageantry
         41305, // Genesis I
         41306, // Genesis II
+        44348, // Phantasmagoria
 
         #endregion
     };
