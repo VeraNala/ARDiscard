@@ -10,7 +10,7 @@ steps:
   - name: dotnet restore
     image: mcr.microsoft.com/dotnet/sdk:9.0-noble
     commands:
-      - dotnet restore --packages $CI_WORKSPACE/.nuget
+      - dotnet restore /p:Configuration=Release --packages $CI_WORKSPACE/.nuget
 
   - name: dotnet build
     image: mcr.microsoft.com/dotnet/sdk:9.0-noble
