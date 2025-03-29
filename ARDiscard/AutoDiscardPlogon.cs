@@ -342,7 +342,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
                 if (addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded)
                 {
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
-                    var text = MemoryHelper.ReadSeString(&textNode->NodeText).ExtractText();
+                    var text = MemoryHelper.ReadSeString(&textNode->NodeText).GetText();
                     _pluginLog.Information($"YesNo prompt: {text}");
                     if (_gameStrings.DiscardItem.IsMatch(text) || _gameStrings.DiscardCollectable.IsMatch(text))
                     {
