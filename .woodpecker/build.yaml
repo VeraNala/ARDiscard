@@ -34,7 +34,7 @@ steps:
       draft: true
       files:
         - "release/*.zip"
-        - "release/*.json"
+        - "release/*.json.*"
       api_key:
         from_secret: ACCESS_TOKEN
       checksum: sha256
