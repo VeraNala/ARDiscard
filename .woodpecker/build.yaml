@@ -8,12 +8,12 @@ steps:
     image: git.carvel.li/actions/download-dalamud
 
   - name: dotnet restore
-    image: mcr.microsoft.com/dotnet/sdk:9.0-jammy
+    image: mcr.microsoft.com/dotnet/sdk:9.0-noble
     commands:
       - dotnet restore --packages $CI_WORKSPACE/.nuget
 
   - name: dotnet build
-    image: mcr.microsoft.com/dotnet/sdk:9.0-jammy
+    image: mcr.microsoft.com/dotnet/sdk:9.0-noble
     commands:
       - export DALAMUD_HOME=$CI_WORKSPACE/.dalamud/
       - dotnet build ARDiscard/ARDiscard.csproj -c Release -f net9.0-windows -p:DalamudLibPath=$DALAMUD_HOME -maxcpucount:1 --source $CI_WORKSPACE/.nuget --no-restore
