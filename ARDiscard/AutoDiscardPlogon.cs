@@ -105,7 +105,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _autoRetainerApi = new();
         _taskManager = new();
         _contextMenuIntegration = new(_chatGui, itemCache, _configuration, listManager, _configWindow, _gameGui, contextMenu);
-        _autoDiscardIpc = new(_pluginInterface, _configuration);
+        _autoDiscardIpc = new(_pluginInterface, _configuration, _discardWindow);
 
         _clientState.Login += _discardWindow.Login;
         _clientState.Logout += _discardWindow.Logout;
