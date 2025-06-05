@@ -53,7 +53,7 @@ internal sealed class DiscardWindow : LWindow
 
     public bool Locked { get; set; }
 
-    public override void Draw()
+    public override void DrawContent()
     {
         ImGui.Text("With your current configuration, the following items would be discarded:");
 

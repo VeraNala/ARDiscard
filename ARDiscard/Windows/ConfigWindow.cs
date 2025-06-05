@@ -56,7 +56,7 @@ internal sealed class ConfigWindow : LWindow
         };
     }
 
-    public override void Draw()
+    public override void DrawContent()
     {
         bool runAfterVenture = _configuration.RunAfterVenture;
         if (ImGui.Checkbox("[Global] Run automatically after AutoRetainer's venture", ref runAfterVenture))
