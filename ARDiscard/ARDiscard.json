@@ -4,7 +4,7 @@
   "Punchline": "Discard items automatically via a command or as a post-venture task for AutoRetainer",
   "Description": "Small plugin to help keep your inventory organized (especially when automating retainers or submersibles) by discarding items you don't want (e.g. Stuffed Alphas)",
   "RepoUrl": "https://github.com/VeraNala/ARDiscard",
-  "IconUrl": "https://github.com/VeraNala/ARDiscard/ARDiscard.png",
+  "IconUrl": "https://github.com/VeraNala/ARDiscard/ARDiscard/ARDiscard.png",
   "Tags": [
     "autoretainer",
     "automation",
