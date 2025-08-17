@@ -10,7 +10,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Common.Math;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using LLib;
 using LLib.ImGui;
 
@@ -126,7 +126,7 @@ internal sealed class DiscardWindow : LWindow
             using IDalamudTextureWrap? icon = _iconCache.GetIcon(displayedItem.IconId);
             if (icon != null)
             {
-                ImGui.Image(icon.ImGuiHandle, new Vector2(23, 23));
+                ImGui.Image(icon.Handle, new Vector2(23, 23));
                 ImGui.SameLine();
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 3);
             }

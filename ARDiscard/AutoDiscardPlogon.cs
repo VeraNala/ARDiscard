@@ -337,7 +337,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         {
             try
             {
-                var addon = (AtkUnitBase*)_gameGui.GetAddonByName("SelectYesno", i);
+                var addon = (AtkUnitBase*)_gameGui.GetAddonByName("SelectYesno", i).Address;
                 if (addon == null) return null;
                 if (addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded)
                 {
