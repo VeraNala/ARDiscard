@@ -1,3 +1,11 @@
-﻿/.idea
+.DS_Store
+bin/
+obj/
+dist/
 *.user
+*.suo
 .vs/
+.idea/
+*.DotSettings.user
+packages/
+.nuget/
