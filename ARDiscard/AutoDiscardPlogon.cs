@@ -30,6 +30,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
     private readonly IDalamudPluginInterface _pluginInterface;
     private readonly IChatGui _chatGui;
     private readonly IClientState _clientState;
+    private readonly IPlayerState _playerState;
     private readonly IPluginLog _pluginLog;
     private readonly IGameGui _gameGui;
     private readonly ICommandManager _commandManager;
@@ -48,7 +49,8 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
 
     [SuppressMessage("Maintainability", "CA1506")]
     public AutoDiscardPlogon(IDalamudPluginInterface pluginInterface, ICommandManager commandManager, IChatGui chatGui,
-        IDataManager dataManager, IClientState clientState, ICondition condition, IPluginLog pluginLog,
+        IDataManager dataManager, IClientState clientState, IPlayerState playerState, IObjectTable objectTable,
+        ICondition condition, IPluginLog pluginLog,
         IGameGui gameGui, ITextureProvider textureProvider, IContextMenu contextMenu)
     {
         ArgumentNullException.ThrowIfNull(dataManager);
@@ -58,6 +60,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         MigrateConfiguration(_configuration);
         _chatGui = chatGui;
         _clientState = clientState;
+        _playerState = playerState;
         _pluginLog = pluginLog;
         _gameGui = gameGui;
         _commandManager = commandManager;
@@ -86,10 +89,10 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         _pluginInterface.UiBuilder.OpenMainUi += OpenDiscardUi;
         _pluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
 
-        _discardWindow = new(_inventoryUtils, itemCache, _iconCache, clientState, condition, _configuration);
+        _discardWindow = new(_inventoryUtils, itemCache, _iconCache, clientState, objectTable, playerState, condition, _configuration);
         _windowSystem.AddWindow(_discardWindow);
 
-        _configWindow = new(_pluginInterface, _configuration, itemCache, listManager, clientState, condition);
+        _configWindow = new(_pluginInterface, _configuration, itemCache, listManager, clientState, objectTable, playerState, condition);
         _windowSystem.AddWindow(_configWindow);
 
         _configWindow.DiscardNowClicked += (_, _) => OpenDiscardWindow(string.Empty, string.Empty);
@@ -146,7 +149,7 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         {
             _pluginLog.Information($"Not running post-venture tasks for {name}, disabled globally");
         }
-        else if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _clientState.LocalContentId))
+        else if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _playerState.ContentId))
         {
             _pluginLog.Information($"Not running post-venture tasks for {name}, disabled for current character");
         }
@@ -337,8 +340,9 @@ public sealed class AutoDiscardPlogon : IDalamudPlugin
         {
             try
             {
-                var addon = (AtkUnitBase*)_gameGui.GetAddonByName("SelectYesno", i).Address;
-                if (addon == null) return null;
+                var addonPtr = _gameGui.GetAddonByName("SelectYesno", i);
+                if (addonPtr.IsNull) return null;
+                var addon = (AtkUnitBase*)addonPtr.Address;
                 if (addon->IsVisible && addon->UldManager.LoadedState == AtkLoadState.Loaded)
                 {
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();

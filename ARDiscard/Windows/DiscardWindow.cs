@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using ARDiscard.GameData;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Interface.Internal;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Common.Math;
 using Dalamud.Bindings.ImGui;
-using LLib;
 using LLib.ImGui;
 
 namespace ARDiscard.Windows;
@@ -31,7 +28,8 @@ internal sealed class DiscardWindow : LWindow
     public event EventHandler<ItemFilter>? DiscardAllClicked;
 
     public DiscardWindow(InventoryUtils inventoryUtils, ItemCache itemCache, IconCache iconCache,
-        IClientState clientState, ICondition condition, Configuration configuration)
+        IClientState clientState, IObjectTable objectTable, IPlayerState playerState,
+        ICondition condition, Configuration configuration)
         : base("Discard Items###AutoDiscardDiscard")
     {
         _inventoryUtils = inventoryUtils;
