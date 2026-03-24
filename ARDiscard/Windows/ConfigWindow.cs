@@ -20,6 +20,8 @@ internal sealed class ConfigWindow : LWindow
     private readonly ItemCache _itemCache;
     private readonly IListManager _listManager;
     private readonly IClientState _clientState;
+    private readonly IObjectTable _objectTable;
+    private readonly IPlayerState _playerState;
     private readonly ICondition _condition;
     private readonly DiscardListTab _discardListTab;
     private readonly ExcludedListTab _excludedListTab;
@@ -30,7 +32,7 @@ internal sealed class ConfigWindow : LWindow
     public event EventHandler? ConfigSaved;
 
     public ConfigWindow(IDalamudPluginInterface pluginInterface, Configuration configuration, ItemCache itemCache,
-        IListManager listManager, IClientState clientState, ICondition condition)
+        IListManager listManager, IClientState clientState, IObjectTable objectTable, IPlayerState playerState, ICondition condition)
         : base("Auto Discard###AutoDiscardConfig")
     {
         _pluginInterface = pluginInterface;
@@ -38,6 +40,8 @@ internal sealed class ConfigWindow : LWindow
         _itemCache = itemCache;
         _listManager = listManager;
         _clientState = clientState;
+        _objectTable = objectTable;
+        _playerState = playerState;
         _condition = condition;
 
         Size = new Vector2(600, 400);
@@ -107,19 +111,20 @@ internal sealed class ConfigWindow : LWindow
     {
         if (ImGui.BeginTabItem("Excluded Characters"))
         {
-            if (_clientState is { IsLoggedIn: true, LocalContentId: > 0 })
+            if (_clientState is { IsLoggedIn: true } && _playerState.ContentId > 0)
             {
-                string worldName = _clientState.LocalPlayer?.HomeWorld.ValueNullable?.Name .ToString() ?? "??";
+                var localPlayer = _objectTable.LocalPlayer;
+                string worldName = localPlayer?.HomeWorld.ValueNullable?.Name.ToString() ?? "??";
                 ImGui.TextWrapped(
-                    $"Current Character: {_clientState.LocalPlayer?.Name} @ {worldName} ({_clientState.LocalContentId:X})");
+                    $"Current Character: {localPlayer?.Name} @ {worldName} ({_playerState.ContentId:X})");
                 ImGui.Indent(30);
-                if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _clientState.LocalContentId))
+                if (_configuration.ExcludedCharacters.Any(x => x.LocalContentId == _playerState.ContentId))
                 {
                     ImGui.TextColored(ImGuiColors.DalamudRed, "This character is currently excluded.");
                     if (ImGui.Button("Remove exclusion"))
                     {
                         _configuration.ExcludedCharacters.RemoveAll(
-                            c => c.LocalContentId == _clientState.LocalContentId);
+                            c => c.LocalContentId == _playerState.ContentId);
                         Save();
                     }
                 }
@@ -140,8 +145,8 @@ internal sealed class ConfigWindow : LWindow
                     {
                         _configuration.ExcludedCharacters.Add(new Configuration.CharacterInfo
                         {
-                            LocalContentId = _clientState.LocalContentId,
-                            CachedPlayerName = _clientState.LocalPlayer?.Name.ToString() ?? "??",
+                            LocalContentId = _playerState.ContentId,
+                            CachedPlayerName = localPlayer?.Name.ToString() ?? "??",
                             CachedWorldName = worldName,
                         });
                         Save();
